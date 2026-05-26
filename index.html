@@ -150,153 +150,136 @@
         </button>
     </div>
 
-    <!-- Firebase SDKs y configuración completa -->
+    <!-- Cargar configuración de Firebase desde variables de entorno -->
+    <script>
+        // Las variables de entorno serán inyectadas por Vercel
+        window.FIREBASE_CONFIG = {
+            apiKey: process.env.FIREBASE_API_KEY,
+            authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.FIREBASE_APP_ID
+        };
+        
+        // Fallback para desarrollo local (NO USAR EN PRODUCCIÓN)
+        if (!window.FIREBASE_CONFIG.apiKey && window.location.hostname === 'localhost') {
+            console.warn('⚠️ Modo desarrollo: usando configuración local');
+            window.FIREBASE_CONFIG = {
+                apiKey: "AIzaSyARPWz2T-tUDorwK_PXdxXYujDGQQwh5Wk",
+                authDomain: "trivia-mundial-768d8.firebaseapp.com",
+                projectId: "trivia-mundial-768d8",
+                storageBucket: "trivia-mundial-768d8.firebasestorage.app",
+                messagingSenderId: "481390351099",
+                appId: "1:481390351099:web:b749ff855c4c2b7c32565e"
+            };
+        }
+    </script>
+
+    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, getDoc, query, orderBy, limit, getDocs, addDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
         
-        // Tu configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyARPWz2T-tUDorwK_PXdxXYujDGQQwh5Wk",
-            authDomain: "trivia-mundial-768d8.firebaseapp.com",
-            projectId: "trivia-mundial-768d8",
-            storageBucket: "trivia-mundial-768d8.firebasestorage.app",
-            messagingSenderId: "481390351099",
-            appId: "1:481390351099:web:b749ff855c4c2b7c32565e"
-        };
+        // Usar configuración desde window
+        const firebaseConfig = window.FIREBASE_CONFIG;
         
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        console.log('🔥 Firebase conectado correctamente');
-        
-        // Guardar en ventana global
-        window.db = db;
-        window.collection = collection;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
-        window.query = query;
-        window.orderBy = orderBy;
-        window.limit = limit;
-        window.getDocs = getDocs;
-        window.addDoc = addDoc;
-        window.serverTimestamp = serverTimestamp;
-        window.writeBatch = writeBatch;
-        
-        // ==================== VALIDACIÓN Y CREACIÓN AUTOMÁTICA ====================
-        
-        // Verificar si la estructura de Firestore ya existe
-        async function verificarEstructuraFirestore() {
-            const niveles = ['preescolar', 'primaria', 'bachillerato'];
+        if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'process.env.FIREBASE_API_KEY') {
+            console.error('❌ Error: Variables de entorno no configuradas en Vercel');
+            alert('Error de configuración. Contacta al administrador.');
+        } else {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
             
-            for (const nivel of niveles) {
-                try {
-                    const docRef = doc(db, 'scores', nivel);
-                    const docSnap = await getDoc(docRef);
-                    if (!docSnap.exists()) {
-                        return false;
-                    }
-                } catch (error) {
-                    console.warn(`Error verificando ${nivel}:`, error);
-                    return false;
-                }
-            }
-            return true;
-        }
-        
-        // Crear estructura usando batch (más eficiente)
-        async function crearEstructuraFirestore() {
-            const btn = document.getElementById('autoSetupFirestore');
-            const btnText = document.getElementById('setupBtnText');
+            console.log('🔥 Firebase conectado correctamente');
             
-            if (btn) {
-                btn.disabled = true;
-                btnText.textContent = '🔄 Creando...';
-                btn.style.opacity = '0.7';
-            }
+            window.db = db;
+            window.collection = collection;
+            window.doc = doc;
+            window.setDoc = setDoc;
+            window.getDoc = getDoc;
+            window.query = query;
+            window.orderBy = orderBy;
+            window.limit = limit;
+            window.getDocs = getDocs;
+            window.addDoc = addDoc;
+            window.serverTimestamp = serverTimestamp;
+            window.writeBatch = writeBatch;
             
-            const niveles = ['preescolar', 'primaria', 'bachillerato'];
-            let exito = true;
-            
-            try {
-                // Usar batch para operaciones múltiples
-                const batch = writeBatch(db);
-                
-                for (const nivel of niveles) {
-                    const docRef = doc(db, 'scores', nivel);
-                    batch.set(docRef, {
-                        createdAt: new Date().toISOString(),
-                        nombre: nivel,
-                        description: `Puntajes para nivel ${nivel}`,
-                        _created_by: 'auto-setup'
-                    }, { merge: true });
-                }
-                
-                await batch.commit();
-                console.log('✅ Estructura creada exitosamente');
-                
-                // Crear documentos marcadores en cada subcolección
+            // Verificar estructura
+            async function verificarEstructuraFirestore() {
+                const niveles = ['preescolar', 'primaria', 'bachillerato'];
                 for (const nivel of niveles) {
                     try {
-                        const markerRef = doc(db, 'scores', nivel, 'entries', '_estructura_lista');
-                        await setDoc(markerRef, {
-                            _note: "Estructura creada automáticamente",
-                            createdAt: new Date().toISOString()
-                        }, { merge: true });
-                    } catch (err) {
-                        console.warn(`No se pudo crear marcador en ${nivel}:`, err);
+                        const docRef = doc(db, 'scores', nivel);
+                        const docSnap = await getDoc(docRef);
+                        if (!docSnap.exists()) return false;
+                    } catch (error) {
+                        return false;
                     }
                 }
+                return true;
+            }
+            
+            async function crearEstructuraFirestore() {
+                const btn = document.getElementById('autoSetupFirestore');
+                const btnText = document.getElementById('setupBtnText');
+                if (btn) {
+                    btn.disabled = true;
+                    btnText.textContent = '🔄 Creando...';
+                }
                 
-            } catch (error) {
-                console.error('Error creando estructura:', error);
-                exito = false;
+                const niveles = ['preescolar', 'primaria', 'bachillerato'];
+                let exito = true;
+                
+                try {
+                    const batch = writeBatch(db);
+                    for (const nivel of niveles) {
+                        const docRef = doc(db, 'scores', nivel);
+                        batch.set(docRef, {
+                            createdAt: new Date().toISOString(),
+                            nombre: nivel,
+                            _created_by: 'auto-setup'
+                        }, { merge: true });
+                    }
+                    await batch.commit();
+                    
+                    for (const nivel of niveles) {
+                        try {
+                            const markerRef = doc(db, 'scores', nivel, 'entries', '_estructura_lista');
+                            await setDoc(markerRef, { _note: "Estructura creada", createdAt: new Date().toISOString() });
+                        } catch (err) {}
+                    }
+                } catch (error) {
+                    exito = false;
+                }
+                
+                if (btn) {
+                    btn.disabled = false;
+                    btnText.textContent = exito ? '✅ Listo!' : '⚠️ Reintentar';
+                }
+                return exito;
             }
             
-            if (btn) {
-                btn.disabled = false;
-                btnText.textContent = exito ? '✅ Listo!' : '⚠️ Reintentar';
-                btn.style.opacity = '1';
-            }
-            
-            return exito;
-        }
-        
-        // Inicializar
-        async function inicializarFirestoreSetup() {
-            try {
+            async function inicializarFirestoreSetup() {
                 const existe = await verificarEstructuraFirestore();
                 const setupBtn = document.getElementById('firebaseSetupBtn');
-                
-                if (!existe) {
-                    console.log('📁 Estructura no encontrada. Mostrando botón...');
-                    if (setupBtn) setupBtn.style.display = 'block';
+                if (setupBtn) setupBtn.style.display = existe ? 'none' : 'block';
+            }
+            
+            document.getElementById('autoSetupFirestore')?.addEventListener('click', async () => {
+                const exito = await crearEstructuraFirestore();
+                if (exito) {
+                    alert('✅ Estructura creada. La página se recargará.');
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    console.log('✅ Estructura ya existe');
-                    if (setupBtn) setupBtn.style.display = 'none';
+                    alert('⚠️ Error al crear. Revisa la consola.');
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                const setupBtn = document.getElementById('firebaseSetupBtn');
-                if (setupBtn) setupBtn.style.display = 'block';
-            }
+            });
+            
+            inicializarFirestoreSetup();
+            window.dispatchEvent(new Event('firebase-ready'));
         }
-        
-        // Evento del botón
-        document.getElementById('autoSetupFirestore')?.addEventListener('click', async () => {
-            const exito = await crearEstructuraFirestore();
-            if (exito) {
-                alert('✅ ¡Estructura creada!\n\nLa página se recargará.');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                alert('⚠️ Error al crear. Verifica:\n1. Reglas de Firestore\n2. Conexión a internet\n\nPresiona F12 para más detalles.');
-            }
-        });
-        
-        await inicializarFirestoreSetup();
-        window.dispatchEvent(new Event('firebase-ready'));
     </script>
     
     <script src="preguntas.js"></script>
