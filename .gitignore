@@ -1,0 +1,13 @@
+# Firebase config (contiene la API key secreta)
+firebase-config.js
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Editor config
+.vscode/
+.idea/
+
+# Dependencias (si usas alguna)
+node_modules/

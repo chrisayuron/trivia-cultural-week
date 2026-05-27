@@ -150,12 +150,7 @@
         </button>
     </div>
 
-    <!-- Script para inyectar variables de entorno desde Vercel -->
-    <script>
-        // Las variables de entorno se inyectan en tiempo de build por Vercel
-        // Este script será procesado por Vercel y reemplazará __FIREBASE_API_KEY__
-        window.FIREBASE_API_KEY = "__FIREBASE_API_KEY__";
-    </script>
+<script src="firebase-config.js"></script>
 
     <!-- Firebase con variables inyectadas -->
     <script type="module">
