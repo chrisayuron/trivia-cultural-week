@@ -143,50 +143,32 @@
         </div>
     </div>
 
-    <!-- Botón flotante de configuración (oculto por defecto) -->
+    <!-- Botón flotante de configuración -->
     <div class="firebase-setup-btn" id="firebaseSetupBtn" style="display: none;">
         <button id="autoSetupFirestore">
             🔥 <span id="setupBtnText">Configurar Firestore</span>
         </button>
     </div>
 
-    <!-- Cargar configuración de Firebase desde variables de entorno -->
-    <script>
-        // Las variables de entorno serán inyectadas por Vercel
-        window.FIREBASE_CONFIG = {
-            apiKey: process.env.FIREBASE_API_KEY,
-            authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-            appId: process.env.FIREBASE_APP_ID
-        };
-        
-        // Fallback para desarrollo local (NO USAR EN PRODUCCIÓN)
-        if (!window.FIREBASE_CONFIG.apiKey && window.location.hostname === 'localhost') {
-            console.warn('⚠️ Modo desarrollo: usando configuración local');
-            window.FIREBASE_CONFIG = {
-                apiKey: "AIzaSyARPWz2T-tUDorwK_PXdxXYujDGQQwh5Wk",
-                authDomain: "trivia-mundial-768d8.firebaseapp.com",
-                projectId: "trivia-mundial-768d8",
-                storageBucket: "trivia-mundial-768d8.firebasestorage.app",
-                messagingSenderId: "481390351099",
-                appId: "1:481390351099:web:b749ff855c4c2b7c32565e"
-            };
-        }
-    </script>
-
-    <!-- Firebase SDKs -->
+    <!-- Firebase con variable de entorno solo para apiKey -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, getDoc, query, orderBy, limit, getDocs, addDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
         
-        // Usar configuración desde window
-        const firebaseConfig = window.FIREBASE_CONFIG;
+        // Solo la apiKey viene de Vercel, los demás datos son públicos
+        const firebaseConfig = {
+            apiKey: process.env.FIREBASE_API_KEY,
+            authDomain: "trivia-mundial-768d8.firebaseapp.com",
+            projectId: "trivia-mundial-768d8",
+            storageBucket: "trivia-mundial-768d8.firebasestorage.app",
+            messagingSenderId: "481390351099",
+            appId: "1:481390351099:web:b749ff855c4c2b7c32565e"
+        };
         
+        // Verificar que la API key está configurada
         if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'process.env.FIREBASE_API_KEY') {
-            console.error('❌ Error: Variables de entorno no configuradas en Vercel');
-            alert('Error de configuración. Contacta al administrador.');
+            console.error('❌ Error: FIREBASE_API_KEY no configurada en Vercel');
+            document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;"><h1>⚠️ Error de configuración</h1><p>La variable de entorno FIREBASE_API_KEY no está configurada en Vercel.</p><p>Contacta al administrador.</p></div>';
         } else {
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
@@ -206,7 +188,7 @@
             window.serverTimestamp = serverTimestamp;
             window.writeBatch = writeBatch;
             
-            // Verificar estructura
+            // Verificar estructura de Firestore
             async function verificarEstructuraFirestore() {
                 const niveles = ['preescolar', 'primaria', 'bachillerato'];
                 for (const nivel of niveles) {
@@ -251,6 +233,7 @@
                         } catch (err) {}
                     }
                 } catch (error) {
+                    console.error('Error:', error);
                     exito = false;
                 }
                 
@@ -273,7 +256,7 @@
                     alert('✅ Estructura creada. La página se recargará.');
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    alert('⚠️ Error al crear. Revisa la consola.');
+                    alert('⚠️ Error al crear. Revisa la consola (F12).');
                 }
             });
             
