@@ -150,26 +150,45 @@
         </button>
     </div>
 
-    <!-- Firebase con variable de entorno solo para apiKey -->
+    <!-- Script para inyectar variables de entorno desde Vercel -->
+    <script>
+        // Las variables de entorno se inyectan en tiempo de build por Vercel
+        // Este script será procesado por Vercel y reemplazará __FIREBASE_API_KEY__
+        window.FIREBASE_API_KEY = "__FIREBASE_API_KEY__";
+    </script>
+
+    <!-- Firebase con variables inyectadas -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, getDoc, query, orderBy, limit, getDocs, addDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
         
-        // Solo la apiKey viene de Vercel, los demás datos son públicos
-        const firebaseConfig = {
-            apiKey: process.env.FIREBASE_API_KEY,
-            authDomain: "trivia-mundial-768d8.firebaseapp.com",
-            projectId: "trivia-mundial-768d8",
-            storageBucket: "trivia-mundial-768d8.firebasestorage.app",
-            messagingSenderId: "481390351099",
-            appId: "1:481390351099:web:b749ff855c4c2b7c32565e"
-        };
+        // Tomar la API key de la variable global
+        const apiKey = window.FIREBASE_API_KEY;
         
-        // Verificar que la API key está configurada
-        if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'process.env.FIREBASE_API_KEY') {
-            console.error('❌ Error: FIREBASE_API_KEY no configurada en Vercel');
-            document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;"><h1>⚠️ Error de configuración</h1><p>La variable de entorno FIREBASE_API_KEY no está configurada en Vercel.</p><p>Contacta al administrador.</p></div>';
+        // Verificar si la API key fue reemplazada correctamente
+        if (!apiKey || apiKey === "__FIREBASE_API_KEY__") {
+            console.error('❌ Error: API Key no configurada');
+            document.body.innerHTML = `
+                <div style="background: linear-gradient(135deg, #020A2B, #050816); min-height: 100vh; display: flex; justify-content: center; align-items: center; color: white; font-family: Arial, sans-serif;">
+                    <div style="text-align: center; padding: 20px;">
+                        <h1>⚠️ Error de configuración</h1>
+                        <p>La variable de entorno FIREBASE_API_KEY no está configurada en Vercel.</p>
+                        <p>Por favor, contacta al administrador.</p>
+                        <hr style="margin: 20px; border-color: #333;">
+                        <p style="font-size: 12px; color: #888;">Instrucciones: En Vercel → Settings → Environment Variables → agregar FIREBASE_API_KEY</p>
+                    </div>
+                </div>
+            `;
         } else {
+            const firebaseConfig = {
+                apiKey: apiKey,
+                authDomain: "trivia-mundial-768d8.firebaseapp.com",
+                projectId: "trivia-mundial-768d8",
+                storageBucket: "trivia-mundial-768d8.firebasestorage.app",
+                messagingSenderId: "481390351099",
+                appId: "1:481390351099:web:b749ff855c4c2b7c32565e"
+            };
+            
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
             
