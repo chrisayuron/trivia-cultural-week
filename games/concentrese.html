@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concéntrese Mundialista - TRIVIA MUNDIALISTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .card {
+            perspective: 1000px;
+            cursor: pointer;
+            user-select: none;
+            width: var(--card-width);
+            height: var(--card-height);
+            min-width: 0;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-front {
+            background: linear-gradient(135deg, #10b981, #047857);
+            color: white;
+            font-size: clamp(1rem, calc(var(--card-width, 80px) * 0.28), 2rem);
+        }
+        .card-back {
+            background: white;
+            color: #1e293b;
+            transform: rotateY(180deg);
+            padding: clamp(0.125rem, calc(var(--card-width, 80px) * 0.04), 0.4rem);
+            text-align: center;
+            word-break: break-word;
+            overflow: hidden;
+        }
+        .card-back span {
+            font-size: clamp(0.55rem, calc(var(--card-width, 80px) * 0.13), 0.95rem);
+        }
+        .card-back img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 0.25rem;
+        }
+        #tablero {
+            align-content: center;
+            justify-content: center;
+        }
+        .match-success {
+            animation: pulse 0.5s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .victory-overlay {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 h-screen overflow-hidden text-white font-sans flex flex-col">
+
+    <div id="app" class="flex-1 flex flex-col max-w-6xl mx-auto px-2 md:px-4 py-2 w-full overflow-hidden"></div>
+
+    <script>
+        // ============ DATOS ============
+        const banderas = {
+            'Brasil': 'https://flagcdn.com/w320/br.png',
+            'Inglaterra': 'https://flagcdn.com/w320/gb-eng.png',
+            'Alemania': 'https://flagcdn.com/w320/de.png',
+            'Japón': 'https://flagcdn.com/w320/jp.png',
+            'España': 'https://flagcdn.com/w320/es.png',
+            'Francia': 'https://flagcdn.com/w320/fr.png',
+            'Portugal': 'https://flagcdn.com/w320/pt.png',
+            'Uruguay': 'https://flagcdn.com/w320/uy.png',
+            'Canadá': 'https://flagcdn.com/w320/ca.png',
+            'México': 'https://flagcdn.com/w320/mx.png',
+            'Estados Unidos': 'https://flagcdn.com/w320/us.png',
+            'Colombia': 'https://flagcdn.com/w320/co.png',
+            'Argentina': 'https://flagcdn.com/w320/ar.png',
+            'Italia': 'https://flagcdn.com/w320/it.png',
+            'Países Bajos': 'https://flagcdn.com/w320/nl.png'
+        };
+
+        const monumentos = {
+            'Torre Eiffel': 'https://static.vecteezy.com/system/resources/previews/046/542/946/non_2x/eiffel-tower-in-paris-france-close-up-free-png.png',
+            'Big Ben': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRzQqSnOI1CAIrzMNKTiuQTka7wAh3iwbSqQg&s',
+            'Cristo Redentor': 'https://png.pngtree.com/png-clipart/20240418/original/pngtree-the-christ-the-redeemer-statue-in-rio-de-janeiro-brazil-cartoon-png-image_14879846.png',
+            'Monte Fuji': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpEebZM15_dammYSHEg0oBw2qKkf2SFov_5g&s',
+            'Estatua de la Libertad': 'https://png.pngtree.com/png-clipart/20240721/original/pngtree-statue-of-liberty-illustration-png-image_15599040.png',
+            'Coliseo': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8BlPxtauexMCg0u0env7uF5RzuuegyZml4A&s',
+            'Taj Mahal': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6WfGZfHkLBNjOBV_9JqLWZ2BBNSc4YV_zBQ&s',
+            'Machu Picchu': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROQxOQ1fRZqjO2Bq8YVzgNQJVtGxB5LPTlZw&s',
+            'Torre de Pisa': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYILhYZJeOYxKCg9z0ON5Y3_o2rDHn2hJjFA&s',
+            'Pirámides de Egipto': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6JmxLsHHbxQ3PHJqXH0UYp_0eGDbpGxNLOA&s',
+            'Ópera de Sídney': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0VCaV_AH3qLbXJwZ9eRgqmLz5tHbXbpeROA&s',
+            'Catedral de San Basilio': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHCQfgmEum0LXgQYVn3YkOGDRFnGw0pOzEjA&s',
+            'Puerta de Brandeburgo': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvKSCAj7lp9sG4RgMxzXnIHkVjvCkRNVsF0A&s',
+            'Sagrada Familia': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNP4RNGxNxNjHkOdJj5P3LVMvnqkMInkhVYg&s',
+            'Monte Rushmore': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmRgVT0MqHjE0np0L9nHMZLkJNVjG0FAXp2A&s'
+        };
+
+        const animales = {
+            'Jaguar': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8BlPxtauexMCg0u0env7uF5RzuuegyZml4A&s',
+            'Oso polar': 'https://thumbs.dreamstime.com/b/oso-polar-de-pie-en-su-h%C3%A1bitat-%C3%A1rtico-nevado-mirando-directamente-los-espectadores-un-s%C3%ADmbolo-la-fauna-salvaje-y-fr%C3%ADa-422327689.jpg',
+            'Panda': 'https://media.istockphoto.com/id/523761634/es/foto/linda-oso-panda-en-un-%C3%A1rbol-para-escalar.jpg?s=612x612&w=0&k=20&c=cgj_GIpPS_hLGY43GsWwhWPctbJgONYXwDdyxyq2-Rw=',
+            'Canguro': 'https://png.pngtree.com/png-clipart/20240901/original/pngtree-kangaroo-species-habitat-png-image_15908458.png',
+            'Águila calva': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwZFyNUGQ18UYOZQVqBVGjM8Z7q-IG5dnp1w&s',
+            'Castor': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/American_Beaver.jpg/330px-American_Beaver.jpg',
+            'León': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQWL2LrGqMkIHaClXDZB6PLBgXHMozfBFZXGQ&s',
+            'Elefante': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2cGptgDlGdzgXJ9nBzcGZkMXQ2jM3dKBnHQ&s',
+            'Tigre': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRM4dR4EWdDkYwBFPjHGndMXM1cTkJbh2Rs_w&s',
+            'Pingüino': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZq8XdF2FZtZg6BWGjZxwTXGJ5EXkKh_nnEw&s',
+            'Delfín': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGcTGJkwkJgPkAKT0Q_HXxVDqJj5XVvVKJ2w&s',
+            'Lobo': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKFhbq1V9UGfLOTgHXVBMbnDZcXFXH4VzKXQ&s',
+            'Camello': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTymZVrQhQqL6OCHiHZFkDywXhqgGqXgS4SfA&s',
+            'Cocodrilo': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoBLHGXZQvzVc1DGXySLmCfYT4wFq2VZJpzw&s',
+            'Búho': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwBg5EyMUB_VXqXLN0bRgKqg5Xq5Vvq8nCXw&s'
+        };
+
+        const comidas = {
+            'Sushi': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTE1GGXJ2s8C3tFtgxrSpWaVqgbx2YP6tffrg&s',
+            'Pizza': 'https://resources.diariolibre.com/images/binrepository/shutterstock-643604302_14586422_20200818073951-focus-0-0-375-240.jpg',
+            'Tacos': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTreiLXxsbulP8CB7sP476kA2ifWXPC_p1gcA&s',
+            'Poutine': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRe0jVmyiyj3J46x29K0KOyZnPK-F9xOcM9JQ&s',
+            'Bratwurst': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmpjhiOKe0freD3o_cSxwVCyPu5ZSAMQqGOQ&s',
+            'Paella': 'https://assets.tmecosys.com/image/upload/t_web_rdp_recipe_584x480/img/recipe/ras/Assets/6D33C604-1ABF-492A-BCF9-0E1FE1A8D2F4/Derivates/9545feb6-36b1-4bbd-bb74-47bccf7bfb84.jpg',
+            'Hamburguesa': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS68AjXzJFG4DEaAjPYeJDQ3YRQDq-QGZ4Dyw&s',
+            'Croissant': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZVGV_4NTmXbkKKAfkRpGBNXP0BqkjJ5aZlg&s',
+            'Ceviche': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZQYnBPQK2gMgyQZL5sGXCQ5gGX5ZQpCqg5w&s',
+            'Fish and Chips': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRW6W6jXJb4Z0fX4ZZLVFX7CQbQZZ9VZQ7ZqQ&s',
+            'Arepas': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZL5XjXJb4Z0fX4ZZLVFX7CQbQZZ9VZQ7ZqQ&s',
+            'Kimchi': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6Y7X2M3K4Z5Z6Z7Z8Z9Z0Z1Z2Z3Z4Z5Z6Z7&s',
+            'Falafel': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZQ3Q4Q5Q6Q7Q8Q9Q0Q1Q2Q3Q4Q5Q6Q7Q8&s',
+            'Borscht': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZQ9Q0Q1Q2Q3Q4Q5Q6Q7Q8Q9Q0Q1Q2Q3&s',
+            'Pad Thai': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZQ5Q6Q7Q8Q9Q0Q1Q2Q3Q4Q5Q6Q7Q8Q9&s'
+        };
+
+        const jugadores = {
+            'Pelé': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2eckpBrF3-1lKPtQhS0GTmx1WdvK0qDBllA&s',
+            'Maradona': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTl2RoYShBREXmA7RFXkIrmuXiaBZd565NakA&s',
+            'Messi': 'https://mibuenosairesquerido.com/wp-content/uploads/2017/06/messi_png-e1498205532947.png',
+            'Cristiano Ronaldo': 'https://b.fssta.com/uploads/application/soccer/headshots/885.vresize.350.350.medium.1.png',
+            'Neymar': 'https://static-files.saudi-pro-league.pulselive.com/players/headshot/p61278.png',
+            'Mbappé': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1pbKT8RpoSUGqHQ-X4cK9bZLAuKxnkliiJw&s',
+            'Zidane': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTcA2xhRjGnDbrIsL3j0YyJRSvG-kA0RQpK7A&s',
+            'Ronaldinho': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjMGpsJmAXmQUCPKjdhICN3jRrGdJTxfMzrg&s',
+            'Beckenbauer': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCcWfkFtC0Oq8HEPUaQhB4Z5dM2vGgNBBnRA&s',
+            'Cruyff': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTx0BzQFhXE2VHTXFZB6_VvJ7bGpCnJ5zYxMg&s',
+            'Puskás': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQq7DyCskQNCdQ8SgO9TkUBF0hWxCvJLk1BKw&s',
+            'Di Stéfano': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWxVpRfTFNIGbJTNMJkK9Q2Psxhs9_fs_0Mg&s',
+            'Platini': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfR5jUuIxCNW4G0tM_wJ8d5pkhKjXnzkUcMw&s',
+            'Garrincha': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpX_BhDfrJtZq7Yr3q7kR1K6SZNmnF8kYE4g&s',
+            'Maldini': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRAJMFkQ7vZlBEGpMz3nQLTZ5_eMGCGDtNHQQ&s'
+        };
+
+        const paisesSemana = ['Brasil', 'Inglaterra', 'Alemania', 'Japón', 'España', 'Francia', 'Portugal', 'Uruguay', 'Canadá', 'México', 'Estados Unidos', 'Colombia', 'Argentina', 'Italia', 'Países Bajos'];
+        const capitales = {
+            'Brasil': 'Brasilia', 'Inglaterra': 'Londres', 'Alemania': 'Berlín', 'Japón': 'Tokio',
+            'España': 'Madrid', 'Francia': 'París', 'Portugal': 'Lisboa', 'Uruguay': 'Montevideo',
+            'Canadá': 'Ottawa', 'México': 'Ciudad de México', 'Estados Unidos': 'Washington D.C.', 'Colombia': 'Bogotá',
+            'Argentina': 'Buenos Aires', 'Italia': 'Roma', 'Países Bajos': 'Ámsterdam'
+        };
+        const idiomas = {
+            'Brasil': 'Portugués', 'Inglaterra': 'Inglés', 'Alemania': 'Alemán', 'Japón': 'Japonés',
+            'España': 'Español', 'Francia': 'Francés', 'Portugal': 'Portugués', 'Uruguay': 'Español',
+            'Canadá': 'Inglés y Francés', 'México': 'Español', 'Estados Unidos': 'Inglés', 'Colombia': 'Español',
+            'Argentina': 'Español', 'Italia': 'Italiano', 'Países Bajos': 'Neerlandés'
+        };
+
+        // ============ ESTADO DE LA APP ============
+        let nivelSeleccionado = null;
+        let categoriaSeleccionada = null;
+        let dificultadSeleccionada = null;
+        let cartas = [];
+        let cartasSeleccionadas = [];
+        let movimientos = 0;
+        let tiempoInicio = null;
+        let timerInterval = null;
+        let juegoTerminado = false;
+        let parejasEncontradas = 0;
+        const paresPorDificultad = { 'facil': 3, 'medio': 6, 'dificil': 10, 'experto': 15 };
+        let resizeTableroTimeout = null;
+
+        const appContainer = document.getElementById('app');
+
+        // ============ NAVEGACIÓN ============
+        function mostrarSelectorNivel() {
+            appContainer.className = 'flex-1 flex items-center justify-center px-4';
+            appContainer.innerHTML = `
+                <div class="text-center animate-fadeIn w-full">
+                    <a href="../index.html" class="inline-block mb-4 text-slate-400 hover:text-white transition text-sm">← Volver al Menú</a>
+                    <h1 class="text-3xl md:text-4xl font-black text-white mb-3">🧠 Concéntrese Mundialista</h1>
+                    <p class="text-slate-300 mb-6 text-sm">Selecciona tu nivel educativo</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+                        <button onclick="seleccionarNivel('preescolar')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition transform hover:scale-105">
+                            🧒 Preescolar<br><span class="text-xs font-normal">(3-5 años)</span>
+                        </button>
+                        <button onclick="seleccionarNivel('primaria')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition transform hover:scale-105">
+                            👦 Primaria<br><span class="text-xs font-normal">(6-11 años)</span>
+                        </button>
+                        <button onclick="seleccionarNivel('secundaria')" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition transform hover:scale-105">
+                            🧑 Secundaria<br><span class="text-xs font-normal">(12-17 años)</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function seleccionarNivel(nivel) {
+            nivelSeleccionado = nivel;
+            appContainer.className = 'flex-1 flex items-center justify-center px-4';
+            const categorias = obtenerCategoriasPorNivel(nivel);
+            let botonesHTML = categorias.map(cat => `
+                <button onclick="seleccionarCategoria('${cat.id}')" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-xl transition text-sm">
+                    ${cat.icono} ${cat.nombre}
+                </button>
+            `).join('');
+
+            appContainer.innerHTML = `
+                <div class="text-center animate-fadeIn w-full">
+                    <button onclick="mostrarSelectorNivel()" class="text-slate-400 hover:text-white mb-3 inline-block text-sm">← Cambiar nivel</button>
+                    <h2 class="text-2xl font-bold text-white mb-2">Elige una categoría</h2>
+                    <p class="text-slate-400 mb-4 text-sm">Nivel: ${nivel.charAt(0).toUpperCase() + nivel.slice(1)}</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-w-xl mx-auto">
+                        ${botonesHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        function obtenerCategoriasPorNivel(nivel) {
+            if (nivel === 'preescolar') {
+                return [
+                    { id: 'banderas', nombre: 'Banderas', icono: '🏳️' },
+                    { id: 'monumentos', nombre: 'Monumentos', icono: '🏛️' },
+                    { id: 'animales', nombre: 'Animales', icono: '🐾' },
+                    { id: 'comidas', nombre: 'Comidas', icono: '🍽️' }
+                ];
+            } else if (nivel === 'primaria') {
+                return [
+                    { id: 'paises', nombre: 'Países', icono: '🌍' },
+                    { id: 'monumentos', nombre: 'Monumentos', icono: '🏰' },
+                    { id: 'animales', nombre: 'Animales', icono: '🦁' },
+                    { id: 'comidas', nombre: 'Comidas', icono: '🍕' }
+                ];
+            } else if (nivel === 'secundaria') {
+                return [
+                    { id: 'capitales', nombre: 'Capitales', icono: '🏙️' },
+                    { id: 'idiomas', nombre: 'Idiomas', icono: '🗣️' },
+                    { id: 'monumentos', nombre: 'Monumentos ↔ País', icono: '🗽' },
+                    { id: 'gastronomia', nombre: 'Gastronomía ↔ País', icono: '🍜' },
+                    { id: 'futbol', nombre: 'Fútbol', icono: '⚽' }
+                ];
+            }
+        }
+
+        function seleccionarCategoria(categoriaId) {
+            categoriaSeleccionada = categoriaId;
+            appContainer.className = 'flex-1 flex items-center justify-center px-4';
+            appContainer.innerHTML = `
+                <div class="text-center animate-fadeIn w-full">
+                    <button onclick="seleccionarNivel('${nivelSeleccionado}')" class="text-slate-400 hover:text-white mb-3 inline-block text-sm">← Cambiar categoría</button>
+                    <h2 class="text-2xl font-bold text-white mb-2">Dificultad</h2>
+                    <p class="text-slate-400 mb-4 text-sm">Categoría: ${categoriaId}</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-lg mx-auto">
+                        <button onclick="iniciarJuego('facil')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm">Fácil (3 pares)</button>
+                        <button onclick="iniciarJuego('medio')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-xl text-sm">Medio (6 pares)</button>
+                        <button onclick="iniciarJuego('dificil')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl text-sm">Difícil (10 pares)</button>
+                        <button onclick="iniciarJuego('experto')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm">Experto (15 pares)</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============ GENERADOR DE CARTAS ============
+        function generarCartas() {
+            const numPares = paresPorDificultad[dificultadSeleccionada];
+            let items = [];
+            if (nivelSeleccionado === 'preescolar') {
+                items = generarParesImagenIdentica(categoriaSeleccionada, numPares);
+                return duplicarYMezclar(items.map(item => ({ ...item, rol: 'imagen' })), true);
+            } else if (nivelSeleccionado === 'primaria') {
+                items = generarParesImagenNombre(categoriaSeleccionada, numPares);
+                const pares = [];
+                items.forEach(item => {
+                    pares.push({ ...item, rol: 'imagen' });
+                    pares.push({ ...item, rol: 'texto' });
+                });
+                return barajar(pares);
+            } else if (nivelSeleccionado === 'secundaria') {
+                items = generarParesConceptuales(categoriaSeleccionada, numPares);
+                const pares = [];
+                items.forEach(item => {
+                    pares.push({ ...item, rol: 'imagen' });
+                    pares.push({ ...item, rol: 'texto' });
+                });
+                return barajar(pares);
+            }
+        }
+
+        function generarParesImagenIdentica(categoria, num) {
+            const fuente = obtenerFuenteImagenes(categoria);
+            const claves = Object.keys(fuente).slice(0, num);
+            return claves.map(clave => ({
+                tipo: 'imagen',
+                contenido: fuente[clave],
+                texto: clave
+            }));
+        }
+
+        function generarParesImagenNombre(categoria, num) {
+            const fuente = obtenerFuenteImagenes(categoria);
+            const claves = Object.keys(fuente).slice(0, num);
+            return claves.map(clave => ({
+                tipo: 'par',
+                imagen: fuente[clave],
+                texto: clave
+            }));
+        }
+
+        function generarParesConceptuales(categoria, num) {
+            const paises = paisesSemana.slice(0, num);
+            if (categoria === 'capitales') {
+                return paises.map(pais => ({
+                    tipo: 'par',
+                    imagen: banderas[pais],
+                    texto: capitales[pais]
+                }));
+            } else if (categoria === 'idiomas') {
+                return paises.map(pais => ({
+                    tipo: 'par',
+                    imagen: banderas[pais],
+                    texto: idiomas[pais]
+                }));
+            } else if (categoria === 'monumentos') {
+                const mons = Object.keys(monumentos).slice(0, num);
+                const paisesAsignados = ['Francia', 'Inglaterra', 'Brasil', 'Japón', 'Estados Unidos', 'Italia', 'India', 'Perú', 'Italia', 'Egipto', 'Australia', 'Rusia', 'Alemania', 'España', 'Estados Unidos'].slice(0, num);
+                return mons.map((mon, idx) => ({
+                    tipo: 'par',
+                    imagen: monumentos[mon],
+                    texto: paisesAsignados[idx]
+                }));
+            } else if (categoria === 'gastronomia') {
+                const coms = Object.keys(comidas).slice(0, num);
+                const paisesAsignados = ['Japón', 'Italia', 'México', 'Canadá', 'Alemania', 'España', 'Estados Unidos', 'Francia', 'Perú', 'Inglaterra', 'Colombia', 'Corea del Sur', 'Líbano', 'Rusia', 'Tailandia'].slice(0, num);
+                return coms.map((com, idx) => ({
+                    tipo: 'par',
+                    imagen: comidas[com],
+                    texto: paisesAsignados[idx]
+                }));
+            } else if (categoria === 'futbol') {
+                const jugs = Object.keys(jugadores).slice(0, num);
+                const paisesAsignados = ['Brasil', 'Argentina', 'Argentina', 'Portugal', 'Brasil', 'Francia', 'Francia', 'Brasil', 'Alemania', 'Países Bajos', 'Hungría', 'Argentina', 'Francia', 'Brasil', 'Italia'].slice(0, num);
+                return jugs.map((jug, idx) => ({
+                    tipo: 'par',
+                    imagen: jugadores[jug],
+                    texto: paisesAsignados[idx]
+                }));
+            }
+        }
+
+        function obtenerFuenteImagenes(categoria) {
+            if (categoria === 'banderas' || categoria === 'paises') return banderas;
+            if (categoria === 'monumentos') return monumentos;
+            if (categoria === 'animales') return animales;
+            if (categoria === 'comidas') return comidas;
+            return banderas;
+        }
+
+        function duplicarYMezclar(arr, identico = false) {
+            const duplicado = [];
+            arr.forEach(item => {
+                duplicado.push({ ...item });
+                duplicado.push({ ...item });
+            });
+            return barajar(duplicado);
+        }
+
+        function barajar(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // ============ JUEGO ============
+        function iniciarJuego(dificultad) {
+            dificultadSeleccionada = dificultad;
+            cartas = generarCartas();
+            cartasSeleccionadas = [];
+            movimientos = 0;
+            parejasEncontradas = 0;
+            juegoTerminado = false;
+            if (timerInterval) clearInterval(timerInterval);
+            tiempoInicio = Date.now();
+            appContainer.className = 'flex-1 flex flex-col w-full overflow-hidden';
+            renderizarTablero();
+            iniciarCronometro();
+        }
+
+        function renderizarTablero() {
+            const totalPares = paresPorDificultad[dificultadSeleccionada];
+            const totalCartas = totalPares * 2;
+            
+            // Calcular columnas según cantidad
+            let columnas;
+            if (totalPares <= 3) columnas = 3;
+            else if (totalPares <= 6) columnas = 4;
+            else if (totalPares <= 10) columnas = 5;
+            else columnas = 6;
+
+            // En móvil, menos columnas
+            const columnasMobile = Math.min(columnas, totalPares <= 6 ? 3 : 4);
+
+            appContainer.innerHTML = `
+                <div class="flex justify-between items-center gap-2 mb-2 px-1 flex-shrink-0">
+                    <button onclick="mostrarSelectorNivel()" class="text-slate-400 hover:text-white text-xs md:text-sm">← Salir</button>
+                    <div class="flex flex-wrap justify-end gap-1 md:gap-3 text-xs md:text-sm">
+                        <span class="bg-slate-700 px-2 py-1 rounded-full">⏱️ <span id="timer">00:00</span></span>
+                        <span class="bg-slate-700 px-2 py-1 rounded-full">👆 <span id="movimientos">0</span></span>
+                        <span class="bg-slate-700 px-2 py-1 rounded-full">✅ <span id="puntaje">0/${totalPares}</span></span>
+                    </div>
+                </div>
+                <div id="tablero" class="flex-1 grid max-w-4xl mx-auto w-full overflow-hidden" style="--columnas-mobile: ${columnasMobile}; --columnas-desktop: ${columnas};">
+                    ${cartas.map((carta, idx) => `
+                        <div class="card" onclick="voltearCarta(${idx})" data-index="${idx}">
+                            <div class="card-inner">
+                                <div class="card-front flex items-center justify-center text-xl md:text-2xl">⚽</div>
+                                <div class="card-back flex items-center justify-center p-0.5 md:p-1">
+                                    ${renderizarContenidoCarta(carta)}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            requestAnimationFrame(ajustarTamanoTablero);
+        }
+
+        function renderizarContenidoCarta(carta) {
+            if (carta.tipo === 'imagen' || carta.rol === 'imagen') {
+                const imgSrc = carta.contenido || carta.imagen;
+                return `<img src="${imgSrc}" alt="" class="max-w-full max-h-full object-contain rounded" style="max-height: 100%; max-width: 100%;">`;
+            } else if (carta.rol === 'texto') {
+                return `<span class="text-[10px] md:text-xs font-semibold leading-tight p-0.5">${carta.texto}</span>`;
+            }
+            return '';
+        }
+
+        function ajustarTamanoTablero() {
+            const tablero = document.getElementById('tablero');
+            if (!tablero || !dificultadSeleccionada) return;
+
+            const totalPares = paresPorDificultad[dificultadSeleccionada];
+            const totalCartas = totalPares * 2;
+            const columnasDesktop = Number(tablero.style.getPropertyValue('--columnas-desktop')) || 4;
+            const columnasMobile = Number(tablero.style.getPropertyValue('--columnas-mobile')) || 3;
+            const columnas = window.innerWidth >= 768 ? columnasDesktop : columnasMobile;
+            const filas = Math.ceil(totalCartas / columnas);
+            const proporcion = nivelSeleccionado === 'preescolar' ? 1 : totalPares <= 6 ? 3 / 4 : 2 / 3;
+            const espacio = window.innerWidth >= 768 ? 8 : 4;
+            const anchoDisponible = tablero.clientWidth;
+            const altoDisponible = tablero.clientHeight;
+            const anchoPorColumnas = (anchoDisponible - espacio * (columnas - 1)) / columnas;
+            const anchoPorFilas = ((altoDisponible - espacio * (filas - 1)) / filas) * proporcion;
+            const anchoCarta = Math.max(36, Math.floor(Math.min(anchoPorColumnas, anchoPorFilas)));
+            const altoCarta = Math.max(36, Math.floor(anchoCarta / proporcion));
+
+            tablero.style.gridTemplateColumns = `repeat(${columnas}, ${anchoCarta}px)`;
+            tablero.style.gridAutoRows = `${altoCarta}px`;
+            tablero.style.gap = `${espacio}px`;
+            tablero.querySelectorAll('.card').forEach(card => {
+                card.style.setProperty('--card-width', `${anchoCarta}px`);
+                card.style.setProperty('--card-height', `${altoCarta}px`);
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTableroTimeout);
+            resizeTableroTimeout = setTimeout(ajustarTamanoTablero, 80);
+        });
+
+        function voltearCarta(index) {
+            if (juegoTerminado) return;
+            const cartaEl = document.querySelector(`.card[data-index="${index}"]`);
+            if (!cartaEl || cartaEl.classList.contains('flipped')) return;
+            if (cartasSeleccionadas.length === 2) return;
+
+            cartaEl.classList.add('flipped');
+            cartasSeleccionadas.push({ index, carta: cartas[index] });
+
+            if (cartasSeleccionadas.length === 2) {
+                movimientos++;
+                document.getElementById('movimientos').textContent = movimientos;
+                verificarPareja();
+            }
+        }
+
+        function verificarPareja() {
+            const [primera, segunda] = cartasSeleccionadas;
+            const carta1 = primera.carta;
+            const carta2 = segunda.carta;
+
+            let esPareja = false;
+            if (nivelSeleccionado === 'preescolar') {
+                esPareja = (carta1.contenido === carta2.contenido);
+            } else {
+                esPareja = (carta1.imagen === carta2.imagen && carta1.texto === carta2.texto) && (carta1.rol !== carta2.rol);
+            }
+
+            if (esPareja) {
+                parejasEncontradas++;
+                document.getElementById('puntaje').textContent = `${parejasEncontradas}/${paresPorDificultad[dificultadSeleccionada]}`;
+                const el1 = document.querySelector(`.card[data-index="${primera.index}"]`);
+                const el2 = document.querySelector(`.card[data-index="${segunda.index}"]`);
+                el1.classList.add('match-success');
+                el2.classList.add('match-success');
+                cartasSeleccionadas = [];
+                if (parejasEncontradas === paresPorDificultad[dificultadSeleccionada]) {
+                    juegoGanado();
+                }
+            } else {
+                setTimeout(() => {
+                    document.querySelector(`.card[data-index="${primera.index}"]`)?.classList.remove('flipped');
+                    document.querySelector(`.card[data-index="${segunda.index}"]`)?.classList.remove('flipped');
+                    cartasSeleccionadas = [];
+                }, 800);
+            }
+        }
+
+        function juegoGanado() {
+            juegoTerminado = true;
+            clearInterval(timerInterval);
+            const tiempoTotal = Math.floor((Date.now() - tiempoInicio) / 1000);
+            const minutos = Math.floor(tiempoTotal / 60).toString().padStart(2, '0');
+            const segundos = (tiempoTotal % 60).toString().padStart(2, '0');
+            const puntuacion = calcularPuntuacion(movimientos, tiempoTotal);
+
+            guardarProgreso(puntuacion, tiempoTotal);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 victory-overlay flex items-center justify-center z-50';
+            overlay.id = 'victoryOverlay';
+            overlay.innerHTML = `
+                <div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 text-center shadow-2xl">
+                    <div class="text-5xl mb-3">🏆</div>
+                    <h2 class="text-2xl font-bold text-white mb-1">¡Felicitaciones!</h2>
+                    <p class="text-slate-300 mb-4 text-sm">Completaste el concéntrese</p>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-slate-700 p-3 rounded-xl">
+                            <p class="text-xs text-slate-400">Movimientos</p>
+                            <p class="text-lg font-bold text-white">${movimientos}</p>
+                        </div>
+                        <div class="bg-slate-700 p-3 rounded-xl">
+                            <p class="text-xs text-slate-400">Tiempo</p>
+                            <p class="text-lg font-bold text-white">${minutos}:${segundos}</p>
+                        </div>
+                    </div>
+                    <p class="text-amber-400 font-bold text-xl mb-4">Puntuación: ${puntuacion}</p>
+                    <button id="btnJugarOtraVez" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-xl w-full mb-2 text-sm">Jugar otra vez</button>
+                    <button id="btnCambiarNivel" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 px-4 rounded-xl w-full text-sm">Cambiar nivel</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            document.getElementById('btnJugarOtraVez').addEventListener('click', () => {
+                overlay.remove();
+                iniciarJuego(dificultadSeleccionada);
+            });
+            document.getElementById('btnCambiarNivel').addEventListener('click', () => {
+                overlay.remove();
+                mostrarSelectorNivel();
+            });
+        }
+
+        function calcularPuntuacion(movs, tiempo) {
+            const base = 1000;
+            const penalizacion = movs * 5 + Math.floor(tiempo / 10);
+            return Math.max(base - penalizacion, 100);
+        }
+
+        function guardarProgreso(puntuacion, tiempo) {
+            const key = `concentrese_${nivelSeleccionado}_${categoriaSeleccionada}_${dificultadSeleccionada}`;
+            const datos = JSON.parse(localStorage.getItem(key) || '{}');
+            if (!datos.mejorPuntuacion || puntuacion > datos.mejorPuntuacion) {
+                datos.mejorPuntuacion = puntuacion;
+            }
+            if (!datos.mejorTiempo || tiempo < datos.mejorTiempo) {
+                datos.mejorTiempo = tiempo;
+            }
+            datos.partidasCompletadas = (datos.partidasCompletadas || 0) + 1;
+            localStorage.setItem(key, JSON.stringify(datos));
+        }
+
+        function iniciarCronometro() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (juegoTerminado) return;
+                const ahora = Date.now();
+                const diff = Math.floor((ahora - tiempoInicio) / 1000);
+                const minutos = Math.floor(diff / 60).toString().padStart(2, '0');
+                const segundos = (diff % 60).toString().padStart(2, '0');
+                const timerEl = document.getElementById('timer');
+                if (timerEl) timerEl.textContent = `${minutos}:${segundos}`;
+            }, 1000);
+        }
+
+        // Iniciar la app
+        mostrarSelectorNivel();
+    </script>
+</body>
+</html>

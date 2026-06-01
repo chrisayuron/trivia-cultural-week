@@ -2,272 +2,104 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>🏆 Trivia Mundial de Fútbol ⚽</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="app-container">
-        <!-- Pantalla de inicio -->
-        <div id="startScreen" class="screen active">
-            <div class="header">
-                <div class="glow-effect"></div>
-                <h1>🏆⚽ TRIVIA MUNDIAL ⚽🏆</h1>
-                <p>¡Demuestra cuánto sabes del fútbol mundialista!</p>
-            </div>
-            
-            <div class="level-selector">
-                <h2>🌟 Selecciona tu categoría 🌟</h2>
-                <div class="level-cards">
-                    <div class="level-card" data-level="preescolar">
-                        <div class="level-icon">🧸</div>
-                        <h3>Preescolar</h3>
-                        <p>3 - 5 años</p>
-                        <span class="question-count">10 preguntas por ronda</span>
-                    </div>
-                    <div class="level-card" data-level="primaria">
-                        <div class="level-icon">📚</div>
-                        <h3>Primaria</h3>
-                        <p>6 - 10 años</p>
-                        <span class="question-count">10 preguntas por ronda</span>
-                    </div>
-                    <div class="level-card" data-level="bachillerato">
-                        <div class="level-icon">🎓</div>
-                        <h3>Bachillerato</h3>
-                        <p>11 - 17 años</p>
-                        <span class="question-count">10 preguntas por ronda</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tabla de posiciones global -->
-            <div class="leaderboard-container">
-                <h2>🏅 TABLA DE POSICIONES GLOBAL 🏅</h2>
-                <div class="leaderboard-tabs">
-                    <button class="tab-btn active" data-tab="preescolar">🧸 Preescolar</button>
-                    <button class="tab-btn" data-tab="primaria">📚 Primaria</button>
-                    <button class="tab-btn" data-tab="bachillerato">🎓 Bachillerato</button>
-                </div>
-                <div class="leaderboard-content" id="leaderboardContent">
-                    <div class="loading">🌐 Cargando puntajes globales...</div>
-                </div>
-                <div class="leaderboard-footer">
-                    <p>⭐ ¡Juega y aparece en la tabla global! ⭐</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pantalla de ingreso de nombre -->
-        <div id="nameScreen" class="screen">
-            <div class="name-card">
-                <div class="name-icon">👤</div>
-                <h2>¡Ingresa tu nombre!</h2>
-                <p>Para registrar tu puntuación en la tabla global</p>
-                <input type="text" id="playerName" placeholder="Tu nombre aquí" maxlength="20" autocomplete="off">
-                <div class="name-buttons">
-                    <button class="btn-primary" id="startGameBtn">⚽ ¡COMENZAR RONDA! ⚽</button>
-                    <button class="btn-secondary" id="backToMenuBtn">🏠 Volver al menú</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pantalla del juego -->
-        <div id="gameScreen" class="screen">
-            <div class="game-header">
-                <div class="player-info">
-                    <span class="player-name" id="playerNameDisplay"></span>
-                    <span class="level-badge" id="levelBadge"></span>
-                </div>
-                <div class="score-container">
-                    <span>🎯 PUNTOS</span>
-                    <span id="scoreValue">0</span>
-                </div>
-            </div>
-
-            <div class="timer-container">
-                <div class="timer-bar" id="timerBar"></div>
-                <div class="timer-text">
-                    ⏱️ <span id="timerSeconds">20</span> segundos
-                </div>
-            </div>
-
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-                <div class="progress-text">
-                    <span>Pregunta <span id="currentQuestionNum">1</span></span>
-                    <span>de <span id="totalQuestionsNum">10</span></span>
-                </div>
-            </div>
-
-            <div class="question-container">
-                <div class="question-text" id="questionText"></div>
-            </div>
-
-            <div class="options-container" id="optionsContainer"></div>
-
-            <div class="feedback-container" id="feedbackContainer">
-                <div class="feedback-message" id="feedbackMessage"></div>
-            </div>
-        </div>
-
-        <!-- Pantalla de resultados -->
-        <div id="resultScreen" class="screen">
-            <div class="result-card">
-                <div class="result-icon" id="resultIcon">🏆</div>
-                <h2 id="resultTitle">🎉 ¡RONDA COMPLETADA! 🎉</h2>
-                <div class="result-player">
-                    <p>Jugador: <strong id="resultPlayerName"></strong></p>
-                </div>
-                <div class="result-stats">
-                    <div class="result-stat">
-                        <span>📊 Puntuación final</span>
-                        <strong id="finalScore">0</strong>
-                    </div>
-                    <div class="result-stat">
-                        <span>✅ Respuestas correctas</span>
-                        <strong id="correctAnswers">0</strong>
-                    </div>
-                    <div class="result-stat">
-                        <span>❌ Respuestas incorrectas</span>
-                        <strong id="incorrectAnswers">0</strong>
-                    </div>
-                    <div class="result-stat">
-                        <span>📈 Porcentaje de acierto</span>
-                        <strong id="percentage">0%</strong>
-                    </div>
-                </div>
-                <div class="save-status" id="saveStatus"></div>
-                <button class="btn-restart" id="playAgainBtn">🔄 JUGAR OTRA RONDA</button>
-                <button class="btn-home" id="homeFromResultBtn">🏠 VER TABLA DE POSICIONES</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Botón flotante de configuración (oculto por defecto) -->
-    <div class="firebase-setup-btn" id="firebaseSetupBtn" style="display: none;">
-        <button id="autoSetupFirestore">
-            🔥 <span id="setupBtnText">Configurar Firestore</span>
-        </button>
-    </div>
-
-    <!-- Firebase: Configuración inyectada desde Vercel (mismo patrón seguro que tu otro proyecto) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIVIA MUNDIALISTA – Cultural Week 2026</title>
+    
+    <!-- Tailwind CSS desde CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuración de Tailwind -->
     <script>
-        // Esta variable será inyectada por Vercel en tiempo de ejecución
-        // Si no existe, usa configuración local para desarrollo
-        const firebaseConfig = typeof __FIREBASE_CONFIG !== 'undefined' ? __FIREBASE_CONFIG : {
-            apiKey: "TU_API_KEY_LOCAL",
-            authDomain: "trivia-mundial-768d8.firebaseapp.com",
-            projectId: "trivia-mundial-768d8",
-            storageBucket: "trivia-mundial-768d8.firebasestorage.app",
-            messagingSenderId: "481390351099",
-            appId: "1:481390351099:web:b749ff855c4c2b7c32565e"
-        };
-        
-        console.log('🔥 Configuración de Firebase cargada');
-    </script>
-
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, query, orderBy, limit, getDocs, addDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
-        
-        // Usar la configuración global
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        console.log('🔥 Firebase conectado correctamente');
-        
-        // Guardar en ventana global
-        window.db = db;
-        window.collection = collection;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
-        window.query = query;
-        window.orderBy = orderBy;
-        window.limit = limit;
-        window.getDocs = getDocs;
-        window.addDoc = addDoc;
-        window.serverTimestamp = serverTimestamp;
-        window.writeBatch = writeBatch;
-        
-        // Verificar estructura de Firestore
-        async function verificarEstructuraFirestore() {
-            const niveles = ['preescolar', 'primaria', 'bachillerato'];
-            for (const nivel of niveles) {
-                try {
-                    const docRef = doc(db, 'scores', nivel);
-                    const docSnap = await getDoc(docRef);
-                    if (!docSnap.exists()) return false;
-                } catch (error) {
-                    return false;
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
                 }
             }
-            return true;
         }
-        
-        async function crearEstructuraFirestore() {
-            const btn = document.getElementById('autoSetupFirestore');
-            const btnText = document.getElementById('setupBtnText');
-            if (btn) {
-                btn.disabled = true;
-                btnText.textContent = '🔄 Creando...';
-            }
-            
-            const niveles = ['preescolar', 'primaria', 'bachillerato'];
-            let exito = true;
-            
-            try {
-                const batch = writeBatch(db);
-                for (const nivel of niveles) {
-                    const docRef = doc(db, 'scores', nivel);
-                    batch.set(docRef, {
-                        createdAt: new Date().toISOString(),
-                        nombre: nivel,
-                        _created_by: 'auto-setup'
-                    }, { merge: true });
-                }
-                await batch.commit();
-                
-                for (const nivel of niveles) {
-                    try {
-                        const markerRef = doc(db, 'scores', nivel, 'entries', '_estructura_lista');
-                        await setDoc(markerRef, { _note: "Estructura creada", createdAt: new Date().toISOString() });
-                    } catch (err) {}
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                exito = false;
-            }
-            
-            if (btn) {
-                btn.disabled = false;
-                btnText.textContent = exito ? '✅ Listo!' : '⚠️ Reintentar';
-            }
-            return exito;
-        }
-        
-        async function inicializarFirestoreSetup() {
-            const existe = await verificarEstructuraFirestore();
-            const setupBtn = document.getElementById('firebaseSetupBtn');
-            if (setupBtn) setupBtn.style.display = existe ? 'none' : 'block';
-        }
-        
-        document.getElementById('autoSetupFirestore')?.addEventListener('click', async () => {
-            const exito = await crearEstructuraFirestore();
-            if (exito) {
-                alert('✅ Estructura creada. La página se recargará.');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                alert('⚠️ Error al crear. Revisa la consola (F12).');
-            }
-        });
-        
-        inicializarFirestoreSetup();
-        window.dispatchEvent(new Event('firebase-ready'));
     </script>
     
-    <script src="preguntas.js"></script>
-    <script src="script.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+    
+    <!-- Header Fijo -->
+    <header class="fixed top-0 w-full z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-700/50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="#" onclick="navigateTo('home')" class="flex items-center gap-3 hover:scale-105 transition-transform">
+                <span class="text-3xl">⚽</span>
+                <div>
+                    <h1 class="text-white font-bold text-lg leading-tight">TRIVIA MUNDIALISTA</h1>
+                    <p class="text-emerald-400 text-xs">Cultural Week</p>
+                </div>
+            </a>
+            <nav class="hidden md:flex gap-6">
+                <a href="#" onclick="navigateTo('home')" class="text-slate-300 hover:text-white transition-colors font-medium">Inicio</a>
+                <a href="#juegos" class="text-slate-300 hover:text-white transition-colors font-medium">Juegos</a>
+            </nav>
+            <button class="md:hidden text-white text-2xl" onclick="toggleMobileMenu()">☰</button>
+        </div>
+        <!-- Menú Móvil -->
+        <div id="mobileMenu" class="hidden md:hidden bg-slate-800 border-t border-slate-700">
+            <a href="#" onclick="navigateTo('home')" class="block px-4 py-3 text-slate-300 hover:bg-slate-700">Inicio</a>
+            <a href="#juegos" class="block px-4 py-3 text-slate-300 hover:bg-slate-700">Juegos</a>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main id="app" class="pt-20">
+        <!-- Se renderiza dinámicamente -->
+    </main>
+
+    <!-- Footer Horizontal -->
+    <footer class="bg-slate-900/50 border-t border-slate-700/50 mt-20">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+                <!-- Logo y descripción -->
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">⚽</span>
+                    <div>
+                        <h3 class="text-white font-bold text-sm">TRIVIA MUNDIALISTA – Cultural Week 2026</h3>
+                        <p class="text-slate-400 text-xs">Una experiencia educativa diseñada para aprender jugando.</p>
+                    </div>
+                </div>
+
+                <!-- Créditos -->
+                <div class="text-slate-400 text-xs">
+                    <p class="mb-1">Idea original, diseño y desarrollo:</p>
+                    <p class="text-white font-semibold">Ronald Rojas Newball</p>
+                    <p class="text-white font-semibold">Chrisayuron</p>
+                </div>
+
+                <!-- Copyright -->
+                <div class="text-slate-500 text-xs">
+                    © 2026 Cultural Week
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/data/games.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
