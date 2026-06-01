@@ -413,43 +413,17 @@
         }
 
         function generarParesConceptuales(categoria, num) {
-            const paises = paisesSemana.slice(0, num);
-            if (categoria === 'capitales') {
-                return paises.map(pais => ({
-                    tipo: 'par',
-                    imagen: banderas[pais],
-                    texto: capitales[pais]
-                }));
-            } else if (categoria === 'idiomas') {
-                return paises.map(pais => ({
-                    tipo: 'par',
-                    imagen: banderas[pais],
-                    texto: idiomas[pais]
-                }));
-            } else if (categoria === 'monumentos') {
-                const mons = Object.keys(monumentos).slice(0, num);
-                const paisesAsignados = ['Francia', 'Inglaterra', 'Brasil', 'Japón', 'Estados Unidos', 'Italia', 'India', 'Perú', 'Italia (Pisa)', 'Egipto', 'Australia', 'Rusia', 'Alemania', 'España', 'Estados Unidos (Dakota)'].slice(0, num);
-                return mons.map((mon, idx) => ({
-                    tipo: 'par',
-                    imagen: monumentos[mon],
-                    texto: paisesAsignados[idx]
-                }));
-            } else if (categoria === 'gastronomia') {
-                const coms = Object.keys(comidas).slice(0, num);
-                const paisesAsignados = ['Japón', 'Italia', 'México', 'Canadá', 'Alemania', 'España', 'Estados Unidos', 'Francia', 'Perú', 'Inglaterra', 'Colombia', 'Corea del Sur', 'Líbano', 'Rusia', 'Tailandia'].slice(0, num);
-                return coms.map((com, idx) => ({
-                    tipo: 'par',
-                    imagen: comidas[com],
-                    texto: paisesAsignados[idx]
-                }));
-            } else if (categoria === 'futbol') {
-                const jugs = Object.keys(jugadores).slice(0, num);
-                return jugs.map(jug => ({
-                    tipo: 'par',
-                    imagen: jugadores[jug],
-                    texto: jug
-                }));
-            }
+            let fuente = [];
+            if      (categoria === 'capitales')   fuente = paresCapitales;
+            else if (categoria === 'idiomas')      fuente = paresIdiomas;
+            else if (categoria === 'monumentos')   fuente = paresMonumentos;
+            else if (categoria === 'gastronomia')  fuente = paresGastronomia;
+            else if (categoria === 'futbol')       fuente = paresFutbol;
+            return fuente.slice(0, num).map(p => ({
+                tipo:   'par',
+                imagen: p.imagen,
+                texto:  p.texto
+            }));
         }
 
         function obtenerFuenteImagenes(categoria) {
@@ -457,7 +431,12 @@
             if (categoria === 'monumentos') return monumentos;
             if (categoria === 'animales') return animales;
             if (categoria === 'comidas' || categoria === 'gastronomia') return comidas;
-            if (categoria === 'futbol') return jugadores;
+            if (categoria === 'futbol') {
+                // jugadores es array, convertir a objeto {nombre: img} para primaria
+                const obj = {};
+                jugadores.forEach(j => { obj[j.nombre] = j.img; });
+                return obj;
+            }
             return banderas;
         }
 
