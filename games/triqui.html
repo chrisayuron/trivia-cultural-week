@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Triqui Mundialista - Arco vs Bota | TRIVIA MUNDIALISTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Animaciones del proyecto original */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); transform: scale(1); }
+            50% { box-shadow: 0 0 0 15px rgba(74, 222, 128, 0); transform: scale(1.02); }
+        }
+
+        @keyframes slotSpin {
+            0% { transform: translateY(-100%) rotateX(0deg); opacity: 0; }
+            10% { transform: translateY(0) rotateX(0deg); opacity: 1; }
+            90% { transform: translateY(0) rotateX(360deg); opacity: 1; }
+            100% { transform: translateY(100%) rotateX(720deg); opacity: 0; }
+        }
+
+        @keyframes winnerPulse {
+            0% { transform: scale(1); text-shadow: 0 0 0px gold; }
+            50% { transform: scale(1.3); text-shadow: 0 0 20px gold; }
+            100% { transform: scale(1); text-shadow: 0 0 0px gold; }
+        }
+
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out; }
+        .animate-slideInLeft { animation: slideInLeft 0.6s ease-out; }
+        .animate-scaleIn { animation: scaleIn 0.4s ease-out; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Tablero */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(75px, 95px));
+            gap: 12px;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .cell {
+            aspect-ratio: 1 / 1;
+            background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 8px 0 #94a3b8;
+            border: 2px solid #cbd5e1;
+        }
+
+        .cell:active { transform: translateY(4px); box-shadow: 0 4px 0 #94a3b8; }
+        .cell.disabled { cursor: default; opacity: 0.9; }
+        .cell.won-cell {
+            background: linear-gradient(145deg, #bbf7d0, #86efac);
+            border-color: #22c55e;
+            animation: pulseGlow 0.6s ease;
+        }
+
+        /* Tarjetas de equipos */
+        .team-card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-radius: 28px;
+            padding: 14px;
+            transition: all 0.2s ease;
+            border: 2px solid #334155;
+        }
+
+        .team-card.active {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.4), 0 8px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #2d3748, #1e293b);
+            transform: scale(1.02);
+        }
+
+        /* Modal de sorteo */
+        .draw-overlay {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(12px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .slot-machine {
+            background: linear-gradient(145deg, #2d3748, #1e293b);
+            border-radius: 60px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .slot-window {
+            background: #0f172a;
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 0 3px #fbbf24;
+        }
+
+        .slot-reel {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-radius: 20px;
+            padding: 30px 20px;
+            min-width: 140px;
+            text-align: center;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.3), 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .slot-figure {
+            font-size: 5rem;
+            transition: all 0.08s linear;
+            display: inline-block;
+        }
+
+        .vs-divider {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fbbf24;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+
+        .winner-display {
+            animation: winnerPulse 0.5s ease-in-out 3;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            position: absolute;
+            animation: confetti 2s ease-out forwards;
+        }
+
+        /* Botones */
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 0 #047857;
+        }
+        .btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #047857; }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 0 #1d4ed8;
+        }
+        .btn-secondary:active { transform: translateY(2px); box-shadow: 0 2px 0 #1d4ed8; }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 0 #b45309;
+        }
+        .btn-warning:active { transform: translateY(2px); box-shadow: 0 2px 0 #b45309; }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #475569;
+            transition: all 0.15s ease;
+        }
+        .btn-outline:hover { background: #334155; border-color: #64748b; }
+
+        /* Layout de dos columnas */
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .board {
+                grid-template-columns: repeat(3, minmax(70px, 85px));
+                gap: 10px;
+            }
+            .cell {
+                font-size: 2.8rem;
+            }
+            .slot-figure {
+                font-size: 3rem;
+            }
+            .slot-reel {
+                padding: 20px 15px;
+                min-width: 90px;
+            }
+            .vs-divider {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .board {
+                grid-template-columns: repeat(3, minmax(80px, 90px));
+            }
+            .cell {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="w-full max-w-5xl mx-auto"></div>
+
+    <script>
+        // ============ CONFIGURACIÓN ============
+        const PLAYER1_FIGURE = "🥅";
+        const PLAYER2_FIGURE = "👟";
+        
+        let board = Array(9).fill(null);
+        let currentPlayer = PLAYER1_FIGURE;
+        let gameActive = false;
+        let gameReady = false;
+        let scores = { [PLAYER1_FIGURE]: 0, [PLAYER2_FIGURE]: 0 };
+        let team1Name = "ARCO";
+        let team2Name = "BOTA";
+        
+        const appContainer = document.getElementById('app');
+        
+        // ============ CONFETI ============
+        function crearConfeti() {
+            const confetiCount = 50;
+            for (let i = 0; i < confetiCount; i++) {
+                const confeti = document.createElement('div');
+                confeti.className = 'confetti';
+                confeti.style.left = Math.random() * 100 + '%';
+                confeti.style.top = '50%';
+                confeti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                confeti.style.width = (Math.random() * 8 + 4) + 'px';
+                confeti.style.height = (Math.random() * 8 + 4) + 'px';
+                confeti.style.animationDelay = Math.random() * 0.5 + 's';
+                confeti.style.animationDuration = Math.random() * 1.5 + 1.5 + 's';
+                document.body.appendChild(confeti);
+                setTimeout(() => confeti.remove(), 3000);
+            }
+        }
+        
+        // ============ SORTEO ============
+        function mostrarSorteoInicio() {
+            return new Promise((resolve) => {
+                const overlay = document.createElement('div');
+                overlay.className = 'fixed inset-0 draw-overlay flex items-center justify-center z-50';
+                overlay.innerHTML = `
+                    <div class="slot-machine max-w-lg w-full mx-4 animate-scaleIn">
+                        <div class="text-center mb-4">
+                            <h2 class="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500">
+                                🎰 SORTEO MUNDIALISTA 🎰
+                            </h2>
+                            <p class="text-slate-400 text-sm mt-1">¡La máquina decidirá quién comienza!</p>
+                        </div>
+                        
+                        <div class="slot-window">
+                            <div class="flex items-center justify-center gap-4 md:gap-8">
+                                <div class="slot-reel text-center">
+                                    <div class="text-slate-400 text-xs mb-2 font-bold">${team1Name}</div>
+                                    <div id="reel1" class="slot-figure">🥅</div>
+                                </div>
+                                <div class="vs-divider">VS</div>
+                                <div class="slot-reel text-center">
+                                    <div class="text-slate-400 text-xs mb-2 font-bold">${team2Name}</div>
+                                    <div id="reel2" class="slot-figure">👟</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="mensajeSorteo" class="text-center mt-4 text-amber-400 font-bold text-sm">
+                            🎲 Girando la máquina...
+                        </div>
+                        
+                        <div class="mt-4 flex justify-center">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 animate-pulse flex items-center justify-center">
+                                <span class="text-2xl">🎲</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                
+                const reel1 = overlay.querySelector('#reel1');
+                const reel2 = overlay.querySelector('#reel2');
+                const mensajeDiv = overlay.querySelector('#mensajeSorteo');
+                
+                const figuras = ["🥅", "👟", "⚽", "🏆", "🎯", "🏟️", "🌍", "⭐"];
+                let spinInterval;
+                let spinCount = 0;
+                const maxSpins = 25;
+                
+                spinInterval = setInterval(() => {
+                    spinCount++;
+                    const randomFigura1 = figuras[Math.floor(Math.random() * figuras.length)];
+                    const randomFigura2 = figuras[Math.floor(Math.random() * figuras.length)];
+                    reel1.textContent = randomFigura1;
+                    reel2.textContent = randomFigura2;
+                    
+                    if (spinCount % 3 === 0) {
+                        reel1.style.transform = 'scale(1.1)';
+                        reel2.style.transform = 'scale(1.1)';
+                        setTimeout(() => {
+                            reel1.style.transform = 'scale(1)';
+                            reel2.style.transform = 'scale(1)';
+                        }, 50);
+                    }
+                    
+                    const mensajes = ["🎲 Girando...", "⚽ Dando vueltas...", "🏆 Casi está...", "🌍 El mundo decide...", "⭐ Saliendo..."];
+                    mensajeDiv.textContent = mensajes[spinCount % mensajes.length];
+                    
+                    if (spinCount >= maxSpins) {
+                        clearInterval(spinInterval);
+                        const ganador = Math.random() < 0.5 ? PLAYER1_FIGURE : PLAYER2_FIGURE;
+                        const ganadorNombre = ganador === PLAYER1_FIGURE ? team1Name : team2Name;
+                        
+                        if (ganador === PLAYER1_FIGURE) {
+                            reel1.textContent = "🥅";
+                            reel2.textContent = "👟";
+                            reel1.classList.add('winner-display');
+                            mensajeDiv.innerHTML = `🎉 ¡${ganadorNombre} (🥅) comienza la partida! 🎉`;
+                        } else {
+                            reel1.textContent = "🥅";
+                            reel2.textContent = "👟";
+                            reel2.classList.add('winner-display');
+                            mensajeDiv.innerHTML = `🎉 ¡${ganadorNombre} (👟) comienza la partida! 🎉`;
+                        }
+                        
+                        crearConfeti();
+                        const slotMachine = overlay.querySelector('.slot-machine');
+                        slotMachine.style.animation = 'none';
+                        slotMachine.offsetHeight;
+                        slotMachine.style.animation = 'scaleIn 0.4s ease-out';
+                        
+                        setTimeout(() => {
+                            overlay.remove();
+                            resolve(ganador);
+                        }, 2000);
+                    }
+                }, 80);
+            });
+        }
+        
+        // ============ MODALES ============
+        function mostrarModalVictoria(emoji, nombre) {
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 victory-overlay flex items-center justify-center z-50';
+            overlay.innerHTML = `
+                <div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 text-center shadow-2xl border-2 border-amber-500 animate-scaleIn">
+                    <div class="text-6xl mb-3">🏆</div>
+                    <div class="text-5xl mb-2">${emoji}</div>
+                    <h2 class="text-2xl font-bold text-white mb-1">¡TRIQUI!</h2>
+                    <p class="text-xl text-amber-400 font-bold mb-4">${nombre} ha ganado la partida</p>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-slate-700 p-3 rounded-xl"><p class="text-xs text-slate-400">🥅 ${team1Name}</p><p class="text-2xl font-bold text-white">${scores[PLAYER1_FIGURE]}</p></div>
+                        <div class="bg-slate-700 p-3 rounded-xl"><p class="text-xs text-slate-400">👟 ${team2Name}</p><p class="text-2xl font-bold text-white">${scores[PLAYER2_FIGURE]}</p></div>
+                    </div>
+                    <button id="btnNuevaPartida" class="btn-primary text-white font-bold py-2.5 px-4 rounded-xl w-full mb-2">🎮 Nueva partida</button>
+                    <button id="btnReiniciarMarcador" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 px-4 rounded-xl w-full mb-2">🏆 Reiniciar marcador</button>
+                    <button id="btnVolverInicio" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-4 rounded-xl w-full">🏠 Volver al inicio</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            crearConfeti();
+            
+            overlay.querySelector('#btnNuevaPartida').onclick = () => { overlay.remove(); iniciarPartidaConSorteo(); };
+            overlay.querySelector('#btnReiniciarMarcador').onclick = () => {
+                scores = { [PLAYER1_FIGURE]: 0, [PLAYER2_FIGURE]: 0 };
+                overlay.remove();
+                iniciarPartidaConSorteo();
+            };
+            overlay.querySelector('#btnVolverInicio').onclick = () => { window.location.href = 'index.html'; };
+        }
+        
+        function mostrarModalEmpate() {
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 victory-overlay flex items-center justify-center z-50';
+            overlay.innerHTML = `
+                <div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 text-center shadow-2xl border-2 border-amber-500 animate-scaleIn">
+                    <div class="text-6xl mb-3">🤝</div>
+                    <h2 class="text-2xl font-bold text-white mb-2">¡EMPATE!</h2>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-slate-700 p-3 rounded-xl"><p class="text-xs text-slate-400">🥅 ${team1Name}</p><p class="text-2xl font-bold text-white">${scores[PLAYER1_FIGURE]}</p></div>
+                        <div class="bg-slate-700 p-3 rounded-xl"><p class="text-xs text-slate-400">👟 ${team2Name}</p><p class="text-2xl font-bold text-white">${scores[PLAYER2_FIGURE]}</p></div>
+                    </div>
+                    <button id="btnNuevaPartida" class="btn-primary text-white font-bold py-2.5 px-4 rounded-xl w-full mb-2">🎮 Nueva partida</button>
+                    <button id="btnReiniciarMarcador" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 px-4 rounded-xl w-full mb-2">🏆 Reiniciar marcador</button>
+                    <button id="btnVolverInicio" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-4 rounded-xl w-full">🏠 Volver al inicio</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            overlay.querySelector('#btnNuevaPartida').onclick = () => { overlay.remove(); iniciarPartidaConSorteo(); };
+            overlay.querySelector('#btnReiniciarMarcador').onclick = () => {
+                scores = { [PLAYER1_FIGURE]: 0, [PLAYER2_FIGURE]: 0 };
+                overlay.remove();
+                iniciarPartidaConSorteo();
+            };
+            overlay.querySelector('#btnVolverInicio').onclick = () => { window.location.href = 'index.html'; };
+        }
+        
+        // ============ LÓGICA DEL JUEGO ============
+        function updateUI() {
+            const score1El = document.getElementById('scoreTeam1');
+            const score2El = document.getElementById('scoreTeam2');
+            if (score1El) score1El.textContent = scores[PLAYER1_FIGURE];
+            if (score2El) score2El.textContent = scores[PLAYER2_FIGURE];
+            
+            const team1NameEl = document.getElementById('team1Display');
+            const team2NameEl = document.getElementById('team2Display');
+            if (team1NameEl) team1NameEl.textContent = team1Name;
+            if (team2NameEl) team2NameEl.textContent = team2Name;
+            
+            const team1Box = document.getElementById('team1Box');
+            const team2Box = document.getElementById('team2Box');
+            const turnIndicator = document.getElementById('turnIndicator');
+            
+            if (gameActive && gameReady) {
+                if (currentPlayer === PLAYER1_FIGURE) {
+                    team1Box?.classList.add('active');
+                    team2Box?.classList.remove('active');
+                    if (turnIndicator) turnIndicator.innerHTML = `🔄 Turno de: 🥅 ${team1Name}`;
+                } else {
+                    team2Box?.classList.add('active');
+                    team1Box?.classList.remove('active');
+                    if (turnIndicator) turnIndicator.innerHTML = `🔄 Turno de: 👟 ${team2Name}`;
+                }
+            } else {
+                team1Box?.classList.remove('active');
+                team2Box?.classList.remove('active');
+                if (turnIndicator && !gameReady) {
+                    turnIndicator.innerHTML = `🎰 Presiona "🎲 Iniciar partida"`;
+                }
+            }
+        }
+        
+        function checkWinner() {
+            const winPatterns = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+            for (let pattern of winPatterns) {
+                const [a,b,c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    gameActive = false;
+                    gameReady = false;
+                    const winner = board[a];
+                    scores[winner]++;
+                    const winnerName = winner === PLAYER1_FIGURE ? team1Name : team2Name;
+                    const winnerEmoji = winner === PLAYER1_FIGURE ? "🥅" : "👟";
+                    highlightWinningCells(pattern);
+                    updateUI();
+                    mostrarModalVictoria(winnerEmoji, winnerName);
+                    return winner;
+                }
+            }
+            if (board.every(cell => cell !== null)) {
+                gameActive = false;
+                gameReady = false;
+                updateUI();
+                mostrarModalEmpate();
+                return "tie";
+            }
+            return null;
+        }
+        
+        function highlightWinningCells(pattern) {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => cell.classList.remove('won-cell'));
+            for (let idx of pattern) {
+                if (cells[idx]) cells[idx].classList.add('won-cell');
+            }
+        }
+        
+        function handleCellClick(index) {
+            if (!gameActive || !gameReady) return;
+            if (board[index] !== null) return;
+            
+            board[index] = currentPlayer;
+            renderBoard();
+            
+            const winner = checkWinner();
+            if (winner) { renderBoard(); return; }
+            
+            currentPlayer = currentPlayer === PLAYER1_FIGURE ? PLAYER2_FIGURE : PLAYER1_FIGURE;
+            updateUI();
+        }
+        
+        function renderBoard() {
+            const boardContainer = document.getElementById('board');
+            if (!boardContainer) return;
+            boardContainer.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                if (board[i] !== null) {
+                    cell.textContent = board[i];
+                    cell.classList.add('disabled');
+                }
+                if (!gameActive || !gameReady) cell.classList.add('disabled');
+                cell.onclick = () => handleCellClick(i);
+                boardContainer.appendChild(cell);
+            }
+        }
+        
+        async function iniciarPartidaConSorteo() {
+            board = Array(9).fill(null);
+            gameActive = true;
+            gameReady = false;
+            renderBoard();
+            
+            const ganador = await mostrarSorteoInicio();
+            
+            currentPlayer = ganador;
+            gameReady = true;
+            gameActive = true;
+            renderBoard();
+            updateUI();
+            
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => cell.classList.remove('disabled'));
+        }
+        
+        function resetFullScore() {
+            scores = { [PLAYER1_FIGURE]: 0, [PLAYER2_FIGURE]: 0 };
+            updateUI();
+            iniciarPartidaConSorteo();
+        }
+        
+        function updateNames() {
+            const input1 = document.getElementById('team1Name');
+            const input2 = document.getElementById('team2Name');
+            let newName1 = input1?.value.trim() || "ARCO";
+            let newName2 = input2?.value.trim() || "BOTA";
+            if (newName1 === "") newName1 = "ARCO";
+            if (newName2 === "") newName2 = "BOTA";
+            team1Name = newName1;
+            team2Name = newName2;
+            updateUI();
+        }
+        
+        // ============ RENDERIZADO PRINCIPAL (DOS COLUMNAS) ============
+        function renderMainUI() {
+            appContainer.innerHTML = `
+                <div class="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-5 shadow-2xl border border-slate-700 animate-fadeIn">
+                    <div class="text-center mb-5">
+                        <h1 class="text-3xl md:text-4xl font-black bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">
+                            🎮 TRIQUI MUNDIALISTA ⚽
+                        </h1>
+                        <p class="text-slate-400 text-sm">🥅 Arco vs 👟 Bota (Guayo)</p>
+                    </div>
+                    
+                    <!-- DOS COLUMNAS: IZQUIERDA (CONTROLES) | DERECHA (TABLERO) -->
+                    <div class="two-column-layout">
+                        <!-- COLUMNA IZQUIERDA: Configuración, equipos y botones -->
+                        <div class="space-y-4">
+                            <!-- Configuración nombres -->
+                            <div class="bg-slate-800/30 rounded-2xl p-4">
+                                <h3 class="text-slate-300 font-semibold text-sm mb-3 flex items-center gap-2">✏️ <span>Personalizar equipos</span></h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-xs text-slate-400 block mb-1">🥅 Equipo Arco</label>
+                                        <input type="text" id="team1Name" maxlength="20" placeholder="ARCO" value="${team1Name}" class="w-full bg-slate-700 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm font-bold focus:outline-none focus:border-amber-500">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-400 block mb-1">👟 Equipo Bota</label>
+                                        <input type="text" id="team2Name" maxlength="20" placeholder="BOTA" value="${team2Name}" class="w-full bg-slate-700 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm font-bold focus:outline-none focus:border-amber-500">
+                                    </div>
+                                    <button id="btnActualizarNombres" class="btn-secondary text-white font-bold py-2 px-4 rounded-xl text-sm w-full transition">
+                                        ✏️ Actualizar nombres
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Marcador de equipos -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div id="team1Box" class="team-card text-center">
+                                    <div class="text-4xl mb-1">🥅</div>
+                                    <div id="team1Display" class="text-white font-bold text-xs truncate">${team1Name}</div>
+                                    <div id="scoreTeam1" class="text-3xl font-black text-amber-400">${scores[PLAYER1_FIGURE]}</div>
+                                </div>
+                                <div id="team2Box" class="team-card text-center">
+                                    <div class="text-4xl mb-1">👟</div>
+                                    <div id="team2Display" class="text-white font-bold text-xs truncate">${team2Name}</div>
+                                    <div id="scoreTeam2" class="text-3xl font-black text-amber-400">${scores[PLAYER2_FIGURE]}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Indicador de turno -->
+                            <div id="turnIndicator" class="bg-slate-800 rounded-xl p-3 text-center text-white font-bold text-sm">
+                                🎰 Presiona "Iniciar"
+                            </div>
+                            
+                            <!-- Botones principales -->
+                            <div class="space-y-2">
+                                <button id="btnIniciar" class="btn-primary text-white font-bold py-3 px-4 rounded-xl text-base w-full transition flex items-center justify-center gap-2">
+                                    🎲 Iniciar partida
+                                </button>
+                                <button id="btnReiniciarScore" class="btn-warning text-white font-bold py-2 px-4 rounded-xl text-sm w-full transition flex items-center justify-center gap-2">
+                                    🏆 Reiniciar marcador
+                                </button>
+                                <button id="btnVolverHome" class="btn-outline text-slate-300 font-bold py-2 px-4 rounded-xl text-sm w-full transition flex items-center justify-center gap-2">
+                                    🏠 Volver al inicio
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- COLUMNA DERECHA: Tablero de juego -->
+                        <div class="bg-slate-800/30 rounded-2xl p-4 flex flex-col items-center justify-center">
+                            <h3 class="text-slate-300 font-semibold text-sm mb-3 flex items-center gap-2">🎯 <span>Tablero de juego</span></h3>
+                            <div id="board" class="board"></div>
+                            <div class="mt-4 text-center">
+                                <p class="text-slate-500 text-xs">⚡ Haz clic en las casillas para jugar</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('btnIniciar')?.addEventListener('click', iniciarPartidaConSorteo);
+            document.getElementById('btnActualizarNombres')?.addEventListener('click', updateNames);
+            document.getElementById('btnReiniciarScore')?.addEventListener('click', resetFullScore);
+            document.getElementById('btnVolverHome')?.addEventListener('click', () => { window.location.href = 'index.html'; });
+            
+            board = Array(9).fill(null);
+            gameActive = false;
+            gameReady = false;
+            renderBoard();
+            updateUI();
+        }
+        
+        renderMainUI();
+    </script>
+</body>
+</html>

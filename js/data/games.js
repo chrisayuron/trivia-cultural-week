@@ -93,7 +93,7 @@ const GAMES_DATA = [
         objectives: ['Pensamiento lógico', 'Toma de decisiones', 'Anticipación'],
         competencies: ['Estrategia', 'Planificación', 'Resolución de problemas'],
         isPopular: false,
-        status: 'building',
+        status: 'available',
         gameUrl: 'games/triqui.html'
     },
     {
