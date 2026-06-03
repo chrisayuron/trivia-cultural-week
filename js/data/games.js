@@ -45,7 +45,7 @@ const GAMES_DATA = [
         objectives: ['Vocabulario', 'Concentración', 'Agilidad visual'],
         competencies: ['Reconocimiento de patrones', 'Ortografía', 'Atención selectiva'],
         isPopular: false,
-        status: 'building',
+        status: 'available',
         gameUrl: 'games/sopa-letras.html'
     },
     {
