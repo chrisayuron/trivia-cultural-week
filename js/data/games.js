@@ -13,7 +13,7 @@ const GAMES_DATA = [
         objectives: ['Asociación', 'Geografía básica', 'Participación grupal'],
         competencies: ['Reconocimiento visual', 'Memoria auditiva', 'Trabajo en equipo'],
         isPopular: true,
-        status: 'available',
+        status: 'building',
         gameUrl: 'games/bingo.html'
     },
     {
@@ -45,7 +45,7 @@ const GAMES_DATA = [
         objectives: ['Vocabulario', 'Concentración', 'Agilidad visual'],
         competencies: ['Reconocimiento de patrones', 'Ortografía', 'Atención selectiva'],
         isPopular: false,
-        status: 'available',
+        status: 'building',
         gameUrl: 'games/sopa-letras.html'
     },
     {
@@ -93,7 +93,7 @@ const GAMES_DATA = [
         objectives: ['Pensamiento lógico', 'Toma de decisiones', 'Anticipación'],
         competencies: ['Estrategia', 'Planificación', 'Resolución de problemas'],
         isPopular: false,
-        status: 'available',
+        status: 'building',
         gameUrl: 'games/triqui.html'
     },
     {
@@ -109,7 +109,7 @@ const GAMES_DATA = [
         objectives: ['Conocimiento general', 'Suerte', 'Diversión grupal'],
         competencies: ['Cultura general', 'Participación', 'Manejo de turnos'],
         isPopular: true,
-        status: 'available',
+        status: 'building',
         gameUrl: 'games/ruleta.html'
     },
     {
@@ -125,7 +125,7 @@ const GAMES_DATA = [
         objectives: ['Ortografía', 'Vocabulario', 'Deducción'],
         competencies: ['Conciencia fonológica', 'Razonamiento deductivo', 'Ampliación de vocabulario'],
         isPopular: false,
-        status: 'available',
+        status: 'building',
         gameUrl: 'games/ahorcado.html'
     },
     {
@@ -141,7 +141,7 @@ const GAMES_DATA = [
         objectives: ['Conocimiento general', 'Comprensión lectora', 'Toma de decisiones'],
         competencies: ['Cultura mundial', 'Memoria', 'Razonamiento rápido'],
         isPopular: true,
-        status: 'available',
+        status: 'building',
         gameUrl: 'games/sabio-mundialista.html'
     }
 ];

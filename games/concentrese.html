@@ -2,11 +2,15 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Concéntrese Mundialista - TRIVIA MUNDIALISTA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
         .card {
             perspective: 1000px;
             cursor: pointer;
@@ -14,6 +18,10 @@
             width: var(--card-width);
             height: var(--card-height);
             min-width: 0;
+            transition: transform 0.1s ease;
+        }
+        .card:active {
+            transform: scale(0.97);
         }
         .card-inner {
             position: relative;
@@ -21,6 +29,8 @@
             height: 100%;
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
+            border-radius: 1rem;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.3);
         }
         .card.flipped .card-inner {
             transform: rotateY(180deg);
@@ -29,51 +39,104 @@
             position: absolute;
             inset: 0;
             backface-visibility: hidden;
-            border-radius: 0.5rem;
+            border-radius: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: 800;
         }
+        /* Lado frontal: número enorme y llamativo */
         .card-front {
-            background: linear-gradient(135deg, #10b981, #047857);
-            color: white;
-            font-size: clamp(1rem, calc(var(--card-width, 80px) * 0.28), 2rem);
+            background: linear-gradient(145deg, #0a3622, #0a5c3e);
+            color: #ffdd55;
+            font-size: clamp(2.2rem, calc(var(--card-width, 120px) * 0.55), 4rem);
+            font-weight: 900;
+            text-shadow: 4px 4px 0 rgba(0,0,0,0.4);
+            border: 3px solid rgba(255,221,85,0.6);
+            font-family: 'Inter', monospace;
         }
         .card-back {
             background: white;
-            color: #1e293b;
+            color: #0f172a;
             transform: rotateY(180deg);
-            padding: clamp(0.125rem, calc(var(--card-width, 80px) * 0.04), 0.4rem);
+            padding: clamp(0.35rem, calc(var(--card-width, 120px) * 0.06), 1rem);
             text-align: center;
             word-break: break-word;
             overflow: hidden;
+            background: linear-gradient(135deg, #fff, #f1f5f9);
+            border: 2px solid #cbd5e1;
         }
         .card-back span {
-            font-size: clamp(0.55rem, calc(var(--card-width, 80px) * 0.13), 0.95rem);
+            font-size: clamp(0.8rem, calc(var(--card-width, 120px) * 0.15), 1.1rem);
+            font-weight: 600;
+            display: block;
+            line-height: 1.35;
         }
         .card-back img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            border-radius: 0.25rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         #tablero {
             align-content: center;
             justify-content: center;
+            margin-bottom: 0.5rem;
         }
         .match-success {
-            animation: pulse 0.5s ease-in-out;
+            animation: pulseMatch 0.4s ease-in-out 2;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        @keyframes pulseMatch {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 #4ade80; }
+            50% { transform: scale(1.06); box-shadow: 0 0 0 12px rgba(74,222,128,0.5); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 #4ade80; }
         }
         .victory-overlay {
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+        }
+        .grid-tablero {
+            display: grid;
+            gap: 1rem;
+            justify-content: center;
+            margin: 0 auto;
+            width: 100%;
+        }
+        @media (max-width: 640px) {
+            .grid-tablero {
+                gap: 0.8rem;
+            }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        body {
+            overflow: hidden;
+        }
+        .tablero-scroll {
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1;
+            min-height: 0;
+            padding: 12px 6px;
+        }
+        /* Tarjetas enormes */
+        .card-front {
+            font-size: 3rem;
+        }
+        @media (min-width: 768px) {
+            .card-front {
+                font-size: 3.5rem;
+            }
+        }
+        /* Espaciado más amplio */
+        .gap-xl {
+            gap: 1.25rem;
         }
     </style>
 </head>
@@ -82,7 +145,7 @@
     <div id="app" class="flex-1 flex flex-col max-w-6xl mx-auto px-2 md:px-4 py-2 w-full overflow-hidden"></div>
 
     <script>
-        // ============ DATOS ============
+        // ============ DATOS COMPLETOS ============
         const banderas = {
             'Brasil':        'https://flagcdn.com/w320/br.png',
             'Inglaterra':    'https://flagcdn.com/w320/gb-eng.png',
@@ -102,80 +165,76 @@
         };
 
         const monumentos = {
-            'Torre Eiffel':          'https://hips.hearstapps.com/elle-es/assets/15/37/original/original--be02-c1fd3a0d4839ocio-curiosidades-torre-eiffel-reproducciones-12728614-1-esl-es-reproducciones-jpg.jpg',
-            'Big Ben':               'https://imagenes.elpais.com/resizer/v2/2I2BVNFIBRIESFOP5FMV6ZCVNA.jpg?auth=8e6a7f92173c7c3004d8df04c77f5dbdf6c72316b2300ed21c6edcafa2baa9c9&width=980&height=980&smart=true',
-            'Cristo Redentor':       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Christ_the_Redeemer_-_Cristo_Redentor.jpg/500px-Christ_the_Redeemer_-_Cristo_Redentor.jpg',
-            'Monte Fuji':            'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Chuurei-tou_Fujiyoshida_17025277650_c59733d6ba_o.jpg/330px-Chuurei-tou_Fujiyoshida_17025277650_c59733d6ba_o.jpg',
-            'Estatua de la Libertad':'https://content-historia.nationalgeographic.com.es/medio/2023/10/10/captura-de-pantalla-2023-10-10-a-las-17-32-30_5cfff97a_231010173416_1280x1515.jpg',
-            'Coliseo Romano':        'https://www.barcelo.com/guia-turismo/wp-content/uploads/2020/02/coliseo.jpg',
-            'Taj Mahal':             'https://static.nationalgeographicla.com/files/styles/image_3200/public/93080.jpg?w=1600',
-            'Machu Picchu':          'https://image-tc.galaxy.tf/wijpeg-7ellqz2uqv2l9plk30futx9jr/experiencias-machu-picchu_wide.jpg?crop=0%2C63%2C1200%2C675',
-            'Torre de Pisa':         'https://png.pngtree.com/png-clipart/20230914/original/pngtree-leaning-tower-of-pisa-png-image_12147808.png',
-            'Pirámides de Giza':     'https://content-historia.nationalgeographic.com.es/medio/2024/09/03/shutterstock-2267726773_3a948c25_240903101038_1280x855.jpg',
-            'Ópera de Sídney':       'https://cdn.sanity.io/images/mkg24y51/production/8a43eb22762c9ec412485f30f12079cf17cf3b65-1000x665.webp/que-hacer-sidney-6.webp?rect=57,0,887,665&w=1280&h=960&fm=webp&q=100&fit=fill&auto=format',
-            'Catedral de San Basilio':'https://www.tualmacendemateriales.com/wp-content/uploads/2018/06/catedral-san-basilio.jpg',
-            'Puerta de Brandeburgo': 'https://st4.depositphotos.com/1007373/23747/i/450/depositphotos_237471978-stock-photo-brandenburg-gate-berlin-amazing-sunrise.jpg',
-            'Sagrada Familia':       'https://cdn.culturagenial.com/es/imagenes/sagrada-familia-1.jpg?class=article',
-            'Monte Rushmore':        'https://gestion.pe/resizer/wC7LbNwokff-02_AVSP0XGa_6rM=/1200x900/smart/filters:format(jpeg):quality(75)/arc-anglerfish-arc2-prod-elcomercio.s3.amazonaws.com/public/XLA7WWJJMJBIBLV5EFJM4CSF5I.jpg'
+            'Torre Eiffel':          '../images/monumentos/Torre Eiffel.jpg',
+            'Big Ben':               '../images/monumentos/Big Ben.jpg',
+            'Cristo Redentor':       '../images/monumentos/cristo redentor.jpg',
+            'Monte Fuji':            '../images/monumentos/monte fuji.jpg',
+            'Estatua de la Libertad':'../images/monumentos/Estatua de la Libertad.jpg',
+            'Coliseo Romano':        '../images/monumentos/coliseo romano.jpg',
+            'Taj Mahal':             '../images/monumentos/Taj Mahal.jpg',
+            'Machu Picchu':          '../images/monumentos/Machu Picchu.jpg',
+            'Torre de Pisa':         '../images/monumentos/Torre de Pisa.png',
+            'Pirámides de Giza':     '../images/monumentos/Piramides de Giza.jpg',
+            'Ópera de Sídney':       '../images/monumentos/Opera de Sidney.webp',
+            'Catedral de San Basilio':'../images/monumentos/Catedral de San Basilio.jpg',
+            'Puerta de Brandeburgo': '../images/monumentos/Puerta de Brandeburgo.jpg',
+            'Sagrada Familia':       '../images/monumentos/Sagrada Familia.jpg',
+            'Monte Rushmore':        '../images/monumentos/Monte Rushmore.jpg'
         };
 
         const animales = {
-            'Jaguar':      'https://wwfint.awsassets.panda.org/img/jaguar_prueba_3_742563.png',
-            'Oso polar':   'https://static.nationalgeographicla.com/files/styles/image_3200/public/naturepl01688017.webp?w=1600&h=2399',
-            'Panda':       'https://www.shutterstock.com/image-photo/adorable-giant-panda-bear-isolated-600w-2677837555.jpg',
-            'Canguro':     'https://static.nationalgeographicla.com/files/styles/image_3200/public/nationalgeographic2709937.jpg?w=1900&h=2634',
-            'Águila calva':'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Bald_Eagle_%28Haliaeetus_leucocephalus%29_Kachemak_Bay%2C_Alaska.jpg/250px-Bald_Eagle_%28Haliaeetus_leucocephalus%29_Kachemak_Bay%2C_Alaska.jpg',
-            'Castor':      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/American_Beaver.jpg/330px-American_Beaver.jpg',
-            'León':        'https://i.pinimg.com/736x/70/3d/29/703d29d300172fd8a9c7e25fbdeefc31.jpg',
-            'Elefante':    'https://ichef.bbci.co.uk/ace/ws/640/cpsprodpb/AACD/production/_102952734_elefante.jpg.webp',
-            'Tigre':       'https://png.pngtree.com/png-vector/20240203/ourmid/pngtree-original-tiger-face-png-image_11537172.png',
-            'Pingüino':    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Pygoscelis_papua.jpg/250px-Pygoscelis_papua.jpg',
-            'Delfín':      'https://imagenes.elpais.com/resizer/v2/7T6YBS4G5JDYLJTOSULS373DJI.jpg?auth=123d867c7628d03e52bb2fa8f680a49adbba564e84fea6878ad798faafa68a26&width=1960&height=1470&focal=2262%2C1037',
-            'Lobo':        'https://static.nationalgeographicla.com/files/styles/image_3200/public/05_nationalgeographic_2711495.webp?w=839&h=839',
-            'Camello':     'https://png.pngtree.com/png-clipart/20241114/original/pngtree-camel-clipart-illustration-desert-animal-stock-png-image_17064216.png',
-            'Cocodrilo':   'https://www.undp.org/sites/g/files/zskgke326/files/styles/page_hero_full_mobile/public/2025-07/cocodrilo_cubano_cienaga_de_zapata_4.jpg?h=bfe0b221&itok=VwxjkmFc',
-            'Búho':        'https://cdn0.expertoanimal.com/es/razas/2/6/7/buho-real_762_0_600.jpg'
+            'Jaguar':      '../images/animales/Jaguar.png',
+            'Oso polar':   '../images/animales/Oso polar.webp',
+            'Panda':       '../images/animales/Panda.jpg',
+            'Canguro':     '../images/animales/Canguro.jpg',
+            'Águila calva':'../images/animales/aguila calva.jpg',
+            'Castor':      '../images/animales/castor.jpg',
+            'León':        '../images/animales/Leon.jpg',
+            'Elefante':    '../images/animales/Elefante.webp',
+            'Tigre':       '../images/animales/tigre.png',
+            'Pingüino':    '../images/animales/pinguino.jpg',
+            'Delfín':      '../images/animales/Delfin.jpg',
+            'Lobo':        '../images/animales/Lobo.webp',
+            'Camello':     '../images/animales/camello.png',
+            'Cocodrilo':   '../images/animales/cocodrilo.jpg',
+            'Búho':        '../images/animales/Buho.jpg'
         };
 
         const comidas = {
-            'Sushi':          'https://static.guiainfantil.com/pictures/recetas2/45000/45151-4-como-hacer-maki-sushi-en-casa-recetas-japonesas-para-toda-la-familia.jpg',
-            'Pizza':          'https://marketplace.canva.com/wehe4/MAHBKCwehe4/1/tl/canva-stacked-cheesy-pizza-slices-with-dripping-mozzarella-and-herbs-MAHBKCwehe4.png',
-            'Tacos':          'https://png.pngtree.com/png-vector/20251117/ourmid/pngtree-delicious-tacos-with-meat-and-fresh-toppings-transparent-background-png-image_17983316.webp',
-            'Poutine':        'https://cdn.shopify.com/s/files/1/0591/5649/6549/files/Poutine_Classical_Side_Kelle_480x480.png?v=1629388865',
-            'Bratwurst':      'https://jhbuffalomeat.com/cdn/shop/articles/20240214180701-cover-20elk-20brats-3179457.png?v=1758049219',
-            'Hamburguesa':    'https://png.pngtree.com/png-vector/20240829/ourmid/pngtree-delicious-and-testy-cheese-burger-png-image_13659847.png',
-            'Croissant':      'https://cdn-consum.aktiosdigitalservices.com/tol/consum/media/product/img/300x300/7296028_001.jpg?t=20260203170001',
-            'Ceviche':        'https://aratiendas.com/wp-content/uploads/2024/05/shutterstock_1989893657-1024x683.webp',
-            'Fish and Chips': 'https://media-cdn.tripadvisor.com/media/photo-m/1280/16/50/9a/4d/f-c.jpg',
-            'Arepas':         'https://loisa.com/cdn/shop/articles/IMG_4622.jpg?v=1718162817&width=1500',
-            'Kimchi':         'https://d2yoo3qu6vrk5d.cloudfront.net/pulzo-lite/images-resized/PP158R-s-o.webp',
-            'Falafel':        'https://thismessisours.com/wp-content/uploads/2017/06/20170603-IMG_2831.jpg',
-            'Borscht':        'https://www.huleymantel.com/uploads/s1/60/84/89/85625e6a-343c-4589-9c73-4807cf266519-1.webp',
-            'Pad Thai':       'https://cocinaconcoqui.com/wp-content/uploads/2025/03/receta-pad-thai-600x620.jpg'
+            'Sushi':          '../images/comidas/Sushi.jpg',
+            'Pizza':          '../images/comidas/Pizza.png',
+            'Tacos':          '../images/comidas/tacos.webp',
+            'Poutine':        '../images/comidas/Poutine.png',
+            'Bratwurst':      '../images/comidas/Bratwurst.png',
+            'Hamburguesa':    '../images/comidas/Hamburguesa.png',
+            'Croissant':      '../images/comidas/Croissant.jpg',
+            'Ceviche':        '../images/comidas/Ceviche.webp',
+            'Fish and Chips': '../images/comidas/FishChips.jpg',
+            'Arepas':         '../images/comidas/Arepas.jpg',
+            'Kimchi':         '../images/comidas/Kimchi.webp',
+            'Falafel':        '../images/comidas/falafel.jpg',
+            'Borscht':        '../images/comidas/Borscht.webp',
+            'Pad Thai':       '../images/comidas/Pad Thai.jpg'
         };
 
-        // ── JUGADORES: exactamente 1 por selección nacional, texto = país ──────
-        // Esto garantiza que no haya dos tarjetas con el mismo país en fútbol.
         const jugadores = [
-            { nombre: 'Pelé',              seleccion: 'Brasil',        img: 'https://file.mundodeportivo.com/ext2/info/imagen/futbol/pele/pele-santos2.png' },
-            { nombre: 'Messi',             seleccion: 'Argentina',     img: 'https://media.newyorker.com/photos/64bc4330ef09d4a0e04cb249/3:4/w_1278,h_1704,c_limit/Rosen-Messi-Miami.jpg' },
-            { nombre: 'Cristiano Ronaldo', seleccion: 'Portugal',      img: 'https://s.hs-data.com/gfx/person/l/18623.jpg?fallback=male' },
-            { nombre: 'Mbappé',            seleccion: 'Francia',       img: 'https://publish.realmadrid.com/content/dam/portals/realmadrid-com/es-es/sports/football/3kq9cckrnlogidldtdie2fkbl/players/mbappe/assets/MBAPPE_550x650_SinParche.png' },
-            { nombre: 'Beckenbauer',       seleccion: 'Alemania',      img: 'https://s.hs-data.com/gfx/person/cropped/400x400/41477.png?fallback=male' },
-            { nombre: 'Cruyff',            seleccion: 'Países Bajos',  img: 'https://r1.ilikewallpaper.net/iphone-12-pro-max-wallpapers/download-118221/Johan-Cruyff.jpg' },
-            { nombre: 'Maldini',           seleccion: 'Italia',        img: 'https://miro.medium.com/v2/resize:fit:1284/1*ELmDF1iP7t5vnhVwM6tiyA.jpeg' },
-            { nombre: 'Iniesta',           seleccion: 'España',        img: 'https://w7.pngwing.com/pngs/471/716/png-transparent-andres-iniesta-fc-barcelona-football-player-t-shirt-fc-barcelona-museum-tshirt-blue-sport.png' },
-            { nombre: 'Lineker',           seleccion: 'Inglaterra',    img: 'https://s.hs-data.com/gfx/person/l/42438.jpg?fallback=male' },
-            { nombre: 'Hidetoshi Nakata',  seleccion: 'Japón',         img: 'https://www.iffhs.com/images/legend/10/avatar.png' },
-            { nombre: 'Suárez',            seleccion: 'Uruguay',       img: 'https://upload.wikimedia.org/wikipedia/commons/6/62/Luis_Su%C3%A1rez_Uruguay.jpg' },
-            { nombre: 'Hugo Sánchez',      seleccion: 'México',        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Hugo_S%C3%A1nchez_%282008%29.jpg/240px-Hugo_S%C3%A1nchez_%282008%29.jpg' },
-            { nombre: 'Alfonso Davies',    seleccion: 'Canadá',        img: 'https://assets.bundesliga.com/player/dfl-obj-002fwz-dfl-clu-00000g-dfl-sea-0001k9.png' },
-            { nombre: 'Falcao',            seleccion: 'Colombia',      img: 'https://www.semana.com/resizer/v2/NI736YQVT5ABRA3OKZBIX5CLZ4.jpg?auth=8a10a8ad4a78b21775623d42adec4e0814b072d943afafdccb322a9225624646&smart=true&quality=75&width=1280&height=1280' },
-            { nombre: 'Clint Dempsey',     seleccion: 'Estados Unidos', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Clint_Dempsey_%2826347615912%29_%28cropped%29.jpg/330px-Clint_Dempsey_%2826347615912%29_%28cropped%29.jpg' }
+            { nombre: 'Pelé',              seleccion: 'Brasil',        img: '../images/jugadores/Pele.png' },
+            { nombre: 'Messi',             seleccion: 'Argentina',     img: '../images/jugadores/Messi.jpg' },
+            { nombre: 'Cristiano Ronaldo', seleccion: 'Portugal',      img: '../images/jugadores/CristianoRonaldo.jpg' },
+            { nombre: 'Mbappé',            seleccion: 'Francia',       img: '../images/jugadores/Mbappe.png' },
+            { nombre: 'Beckenbauer',       seleccion: 'Alemania',      img: '../images/jugadores/Beckenbauer.png' },
+            { nombre: 'Cruyff',            seleccion: 'Países Bajos',  img: '../images/jugadores/Cruyff.jpg' },
+            { nombre: 'Maldini',           seleccion: 'Italia',        img: '../images/jugadores/Maldini.jpeg' },
+            { nombre: 'Iniesta',           seleccion: 'España',        img: '../images/jugadores/Iniesta.jpg' },
+            { nombre: 'Lineker',           seleccion: 'Inglaterra',    img: '../images/jugadores/Lineker.jpg' },
+            { nombre: 'Hidetoshi Nakata',  seleccion: 'Japón',         img: '../images/jugadores/HidetoshiNakata.png' },
+            { nombre: 'Suárez',            seleccion: 'Uruguay',       img: '../images/jugadores/Luissuarez.jpg' },
+            { nombre: 'Hugo Sánchez',      seleccion: 'México',        img: '../images/jugadores/HugoSanchez.jpg' },
+            { nombre: 'Alfonso Davies',    seleccion: 'Canadá',        img: '../images/jugadores/AlfonsoDavies.png' },
+            { nombre: 'Falcao',            seleccion: 'Colombia',      img: '../images/jugadores/Falcao.jpg' },
+            { nombre: 'Clint Dempsey',     seleccion: 'Estados Unidos', img: '../images/jugadores/ClintDempsey.jpg' }
         ];
 
-        // ── DATOS CONCEPTUALES PARA SECUNDARIA ───────────────────────────────
-        // Capitales: bandera del país ↔ nombre de la capital (todos únicos)
         const paresCapitales = [
             { imagen: banderas['Brasil'],         texto: 'Brasilia' },
             { imagen: banderas['Inglaterra'],     texto: 'Londres' },
@@ -194,8 +253,6 @@
             { imagen: banderas['Países Bajos'],   texto: 'Ámsterdam' }
         ];
 
-        // Idiomas: bandera ↔ idioma. Para países que comparten idioma se indica
-        // el país en el texto para que cada par sea visualmente único en el tablero.
         const paresIdiomas = [
             { imagen: banderas['Brasil'],         texto: 'Portugués (Brasil)' },
             { imagen: banderas['Portugal'],       texto: 'Portugués (Portugal)' },
@@ -214,7 +271,6 @@
             { imagen: banderas['Estados Unidos'], texto: 'Inglés (EE.UU.)' }
         ];
 
-        // Monumentos: imagen del monumento ↔ país (todos únicos)
         const paresMonumentos = [
             { imagen: monumentos['Torre Eiffel'],           texto: 'Francia' },
             { imagen: monumentos['Big Ben'],                texto: 'Inglaterra' },
@@ -233,7 +289,6 @@
             { imagen: monumentos['Monte Rushmore'],         texto: 'Estados Unidos (Dakota)' }
         ];
 
-        // Gastronomía: imagen comida ↔ país de origen (todos únicos)
         const paresGastronomia = [
             { imagen: comidas['Sushi'],          texto: 'Japón' },
             { imagen: comidas['Pizza'],          texto: 'Italia' },
@@ -252,13 +307,12 @@
             { imagen: comidas['Pad Thai'],       texto: 'Tailandia' }
         ];
 
-        // Fútbol: foto jugador ↔ selección. 1 jugador por país → texto siempre único.
         const paresFutbol = jugadores.map(j => ({
             imagen: j.img,
             texto:  j.seleccion
         }));
 
-        // ============ ESTADO DE LA APP ============
+        // ============ ESTADO GLOBAL ============
         let nivelSeleccionado = null;
         let categoriaSeleccionada = null;
         let dificultadSeleccionada = null;
@@ -274,119 +328,31 @@
 
         const appContainer = document.getElementById('app');
 
-        // ============ NAVEGACIÓN ============
-        function mostrarSelectorNivel() {
-            appContainer.className = 'flex-1 flex items-center justify-center px-4';
-            appContainer.innerHTML = `
-                <div class="text-center animate-fadeIn w-full">
-                    <a href="../index.html" class="inline-block mb-4 text-slate-400 hover:text-white transition text-sm">← Volver al Menú</a>
-                    <h1 class="text-3xl md:text-4xl font-black text-white mb-3">🧠 Concéntrese Mundialista</h1>
-                    <p class="text-slate-300 mb-6 text-sm">Selecciona tu nivel educativo</p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
-                        <button onclick="seleccionarNivel('preescolar')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition transform hover:scale-105">
-                            🧒 Preescolar<br><span class="text-xs font-normal">(3-5 años)</span>
-                        </button>
-                        <button onclick="seleccionarNivel('primaria')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition transform hover:scale-105">
-                            👦 Primaria<br><span class="text-xs font-normal">(6-11 años)</span>
-                        </button>
-                        <button onclick="seleccionarNivel('secundaria')" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition transform hover:scale-105">
-                            🧑 Secundaria<br><span class="text-xs font-normal">(12-17 años)</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function seleccionarNivel(nivel) {
-            nivelSeleccionado = nivel;
-            appContainer.className = 'flex-1 flex items-center justify-center px-4';
-            const categorias = obtenerCategoriasPorNivel(nivel);
-            let botonesHTML = categorias.map(cat => `
-                <button onclick="seleccionarCategoria('${cat.id}')" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-xl transition text-sm">
-                    ${cat.icono} ${cat.nombre}
-                </button>
-            `).join('');
-
-            appContainer.innerHTML = `
-                <div class="text-center animate-fadeIn w-full">
-                    <button onclick="mostrarSelectorNivel()" class="text-slate-400 hover:text-white mb-3 inline-block text-sm">← Cambiar nivel</button>
-                    <h2 class="text-2xl font-bold text-white mb-2">Elige una categoría</h2>
-                    <p class="text-slate-400 mb-4 text-sm">Nivel: ${nivel.charAt(0).toUpperCase() + nivel.slice(1)}</p>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-w-xl mx-auto">
-                        ${botonesHTML}
-                    </div>
-                </div>
-            `;
-        }
-
-        function obtenerCategoriasPorNivel(nivel) {
-            if (nivel === 'preescolar') {
-                return [
-                    { id: 'banderas', nombre: 'Banderas', icono: '🏳️' },
-                    { id: 'monumentos', nombre: 'Monumentos', icono: '🏛️' },
-                    { id: 'animales', nombre: 'Animales', icono: '🐾' },
-                    { id: 'comidas', nombre: 'Comidas', icono: '🍽️' }
-                ];
-            } else if (nivel === 'primaria') {
-                return [
-                    { id: 'paises', nombre: 'Países', icono: '🌍' },
-                    { id: 'monumentos', nombre: 'Monumentos', icono: '🏰' },
-                    { id: 'animales', nombre: 'Animales', icono: '🦁' },
-                    { id: 'comidas', nombre: 'Comidas', icono: '🍕' }
-                ];
-            } else if (nivel === 'secundaria') {
-                return [
-                    { id: 'capitales', nombre: 'Capitales', icono: '🏙️' },
-                    { id: 'idiomas', nombre: 'Idiomas', icono: '🗣️' },
-                    { id: 'monumentos', nombre: 'Monumentos ↔ País', icono: '🗽' },
-                    { id: 'gastronomia', nombre: 'Gastronomía ↔ País', icono: '🍜' },
-                    { id: 'futbol', nombre: 'Fútbol', icono: '⚽' }
-                ];
+        function barajar(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
             }
+            return arr;
         }
 
-        function seleccionarCategoria(categoriaId) {
-            categoriaSeleccionada = categoriaId;
-            appContainer.className = 'flex-1 flex items-center justify-center px-4';
-            appContainer.innerHTML = `
-                <div class="text-center animate-fadeIn w-full">
-                    <button onclick="seleccionarNivel('${nivelSeleccionado}')" class="text-slate-400 hover:text-white mb-3 inline-block text-sm">← Cambiar categoría</button>
-                    <h2 class="text-2xl font-bold text-white mb-2">Dificultad</h2>
-                    <p class="text-slate-400 mb-4 text-sm">Categoría: ${categoriaId}</p>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-lg mx-auto">
-                        <button onclick="iniciarJuego('facil')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm">Fácil (3 pares)</button>
-                        <button onclick="iniciarJuego('medio')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-xl text-sm">Medio (6 pares)</button>
-                        <button onclick="iniciarJuego('dificil')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl text-sm">Difícil (10 pares)</button>
-                        <button onclick="iniciarJuego('experto')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm">Experto (15 pares)</button>
-                    </div>
-                </div>
-            `;
+        // Números en orden ascendente (1,2,3... según orden del array)
+        function asignarNumerosEnOrden(cartasArray) {
+            return cartasArray.map((_, idx) => idx + 1);
         }
 
-        // ============ GENERADOR DE CARTAS ============
-        function generarCartas() {
-            const numPares = paresPorDificultad[dificultadSeleccionada];
-            let items = [];
-            if (nivelSeleccionado === 'preescolar') {
-                items = generarParesImagenIdentica(categoriaSeleccionada, numPares);
-                return duplicarYMezclar(items.map(item => ({ ...item, rol: 'imagen' })), true);
-            } else if (nivelSeleccionado === 'primaria') {
-                items = generarParesImagenNombre(categoriaSeleccionada, numPares);
-                const pares = [];
-                items.forEach((item, i) => {
-                    pares.push({ ...item, rol: 'imagen', _parId: i });
-                    pares.push({ ...item, rol: 'texto', _parId: i });
-                });
-                return barajar(pares);
-            } else if (nivelSeleccionado === 'secundaria') {
-                items = generarParesConceptuales(categoriaSeleccionada, numPares);
-                const pares = [];
-                items.forEach((item, i) => {
-                    pares.push({ ...item, rol: 'imagen', _parId: i });
-                    pares.push({ ...item, rol: 'texto', _parId: i });
-                });
-                return barajar(pares);
+        // ============ OBTENER FUENTES Y GENERACIÓN DE PARES ============
+        function obtenerFuenteImagenes(categoria) {
+            if (categoria === 'banderas' || categoria === 'paises') return banderas;
+            if (categoria === 'monumentos') return monumentos;
+            if (categoria === 'animales') return animales;
+            if (categoria === 'comidas' || categoria === 'gastronomia') return comidas;
+            if (categoria === 'futbol') {
+                const obj = {};
+                jugadores.forEach(j => { obj[j.nombre] = j.img; });
+                return obj;
             }
+            return banderas;
         }
 
         function generarParesImagenIdentica(categoria, num) {
@@ -425,18 +391,31 @@
             }));
         }
 
-        function obtenerFuenteImagenes(categoria) {
-            if (categoria === 'banderas' || categoria === 'paises') return banderas;
-            if (categoria === 'monumentos') return monumentos;
-            if (categoria === 'animales') return animales;
-            if (categoria === 'comidas' || categoria === 'gastronomia') return comidas;
-            if (categoria === 'futbol') {
-                // jugadores es array, convertir a objeto {nombre: img} para primaria
-                const obj = {};
-                jugadores.forEach(j => { obj[j.nombre] = j.img; });
-                return obj;
+        function generarCartas() {
+            const numPares = paresPorDificultad[dificultadSeleccionada];
+            let items = [];
+            if (nivelSeleccionado === 'preescolar') {
+                items = generarParesImagenIdentica(categoriaSeleccionada, numPares);
+                const mazo = duplicarYMezclar(items.map(item => ({ ...item, rol: 'imagen' })), true);
+                return mazo;
+            } else if (nivelSeleccionado === 'primaria') {
+                items = generarParesImagenNombre(categoriaSeleccionada, numPares);
+                const pares = [];
+                items.forEach((item, i) => {
+                    pares.push({ ...item, rol: 'imagen', _parId: i });
+                    pares.push({ ...item, rol: 'texto', _parId: i });
+                });
+                return barajar(pares);
+            } else if (nivelSeleccionado === 'secundaria') {
+                items = generarParesConceptuales(categoriaSeleccionada, numPares);
+                const pares = [];
+                items.forEach((item, i) => {
+                    pares.push({ ...item, rol: 'imagen', _parId: i });
+                    pares.push({ ...item, rol: 'texto', _parId: i });
+                });
+                return barajar(pares);
             }
-            return banderas;
+            return [];
         }
 
         function duplicarYMezclar(arr, identico = false) {
@@ -448,18 +427,12 @@
             return barajar(duplicado);
         }
 
-        function barajar(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-
-        // ============ JUEGO ============
+        // ============ LÓGICA DE JUEGO ============
         function iniciarJuego(dificultad) {
             dificultadSeleccionada = dificultad;
             cartas = generarCartas();
+            const numerosFrontales = asignarNumerosEnOrden(cartas);
+            
             cartasSeleccionadas = [];
             movimientos = 0;
             parejasEncontradas = 0;
@@ -467,91 +440,109 @@
             if (timerInterval) clearInterval(timerInterval);
             tiempoInicio = Date.now();
             appContainer.className = 'flex-1 flex flex-col w-full overflow-hidden';
-            renderizarTablero();
+            renderizarTablero(numerosFrontales);
             iniciarCronometro();
-        }
-
-        function renderizarTablero() {
-            const totalPares = paresPorDificultad[dificultadSeleccionada];
-            const totalCartas = totalPares * 2;
-            
-            // Calcular columnas según cantidad
-            let columnas;
-            if (totalPares <= 3) columnas = 3;
-            else if (totalPares <= 6) columnas = 4;
-            else if (totalPares <= 10) columnas = 5;
-            else columnas = 6;
-
-            // En móvil, menos columnas
-            const columnasMobile = Math.min(columnas, totalPares <= 6 ? 3 : 4);
-
-            appContainer.innerHTML = `
-                <div class="flex justify-between items-center gap-2 mb-2 px-1 flex-shrink-0">
-                    <button onclick="mostrarSelectorNivel()" class="text-slate-400 hover:text-white text-xs md:text-sm">← Salir</button>
-                    <div class="flex flex-wrap justify-end gap-1 md:gap-3 text-xs md:text-sm">
-                        <span class="bg-slate-700 px-2 py-1 rounded-full">⏱️ <span id="timer">00:00</span></span>
-                        <span class="bg-slate-700 px-2 py-1 rounded-full">👆 <span id="movimientos">0</span></span>
-                        <span class="bg-slate-700 px-2 py-1 rounded-full">✅ <span id="puntaje">0/${totalPares}</span></span>
-                    </div>
-                </div>
-                <div id="tablero" class="flex-1 grid max-w-4xl mx-auto w-full overflow-hidden" style="--columnas-mobile: ${columnasMobile}; --columnas-desktop: ${columnas};">
-                    ${cartas.map((carta, idx) => `
-                        <div class="card" onclick="voltearCarta(${idx})" data-index="${idx}">
-                            <div class="card-inner">
-                                <div class="card-front flex items-center justify-center text-xl md:text-2xl">⚽</div>
-                                <div class="card-back flex items-center justify-center p-0.5 md:p-1">
-                                    ${renderizarContenidoCarta(carta)}
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            requestAnimationFrame(ajustarTamanoTablero);
         }
 
         function renderizarContenidoCarta(carta) {
             if (carta.tipo === 'imagen' || carta.rol === 'imagen') {
                 const imgSrc = carta.contenido || carta.imagen;
-                return `<img src="${imgSrc}" alt="" class="max-w-full max-h-full object-contain rounded" style="max-height: 100%; max-width: 100%;">`;
+                return `<img src="${imgSrc}" alt="imagen" class="max-w-full max-h-full object-contain rounded" style="max-height: 100%; max-width: 100%;">`;
             } else if (carta.rol === 'texto') {
-                return `<span class="text-[10px] md:text-xs font-semibold leading-tight p-0.5">${carta.texto}</span>`;
+                return `<span class="text-sm md:text-base font-semibold leading-tight p-1 break-words">${carta.texto}</span>`;
             }
             return '';
         }
 
-        function ajustarTamanoTablero() {
-            const tablero = document.getElementById('tablero');
-            if (!tablero || !dificultadSeleccionada) return;
-
+        function renderizarTablero(numerosFrontales) {
             const totalPares = paresPorDificultad[dificultadSeleccionada];
             const totalCartas = totalPares * 2;
-            const columnasDesktop = Number(tablero.style.getPropertyValue('--columnas-desktop')) || 4;
-            const columnasMobile = Number(tablero.style.getPropertyValue('--columnas-mobile')) || 3;
-            const columnas = window.innerWidth >= 768 ? columnasDesktop : columnasMobile;
-            const filas = Math.ceil(totalCartas / columnas);
-            const proporcion = nivelSeleccionado === 'preescolar' ? 1 : totalPares <= 6 ? 3 / 4 : 2 / 3;
-            const espacio = window.innerWidth >= 768 ? 8 : 4;
-            const anchoDisponible = tablero.clientWidth;
-            const altoDisponible = tablero.clientHeight;
-            const anchoPorColumnas = (anchoDisponible - espacio * (columnas - 1)) / columnas;
-            const anchoPorFilas = ((altoDisponible - espacio * (filas - 1)) / filas) * proporcion;
-            const anchoCarta = Math.max(36, Math.floor(Math.min(anchoPorColumnas, anchoPorFilas)));
-            const altoCarta = Math.max(36, Math.floor(anchoCarta / proporcion));
+            let columnas;
+            if (totalPares <= 3) columnas = 3;
+            else if (totalPares <= 6) columnas = 4;
+            else if (totalPares <= 10) columnas = 5;
+            else columnas = 6;
+            const columnasMobile = Math.min(columnas, totalPares <= 6 ? 3 : 4);
+            const columnasFinal = window.innerWidth < 768 ? columnasMobile : columnas;
 
-            tablero.style.gridTemplateColumns = `repeat(${columnas}, ${anchoCarta}px)`;
-            tablero.style.gridAutoRows = `${altoCarta}px`;
+            let cartasHTML = '';
+            cartas.forEach((carta, idx) => {
+                const numeroMostrar = numerosFrontales[idx];
+                cartasHTML += `
+                    <div class="card" onclick="voltearCarta(${idx})" data-index="${idx}">
+                        <div class="card-inner">
+                            <div class="card-front flex items-center justify-center font-black">
+                                ${numeroMostrar}
+                            </div>
+                            <div class="card-back flex items-center justify-center p-2 md:p-3">
+                                ${renderizarContenidoCarta(carta)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            appContainer.innerHTML = `
+                <div class="flex justify-between items-center gap-2 mb-3 px-1 flex-shrink-0">
+                    <button onclick="mostrarSelectorNivel()" class="bg-slate-700/80 hover:bg-slate-600 text-white text-xs md:text-sm px-4 py-2 rounded-full transition shadow-md">← Salir</button>
+                    <div class="flex flex-wrap justify-end gap-2 md:gap-3 text-xs md:text-sm">
+                        <span class="bg-slate-700 px-3 py-1.5 rounded-full font-mono shadow">⏱️ <span id="timer">00:00</span></span>
+                        <span class="bg-slate-700 px-3 py-1.5 rounded-full font-mono shadow">👆 <span id="movimientos">0</span></span>
+                        <span class="bg-slate-700 px-3 py-1.5 rounded-full font-mono shadow">✅ <span id="puntaje">0/${totalPares}</span></span>
+                    </div>
+                </div>
+                <div class="tablero-scroll w-full flex justify-center">
+                    <div id="tablero" class="grid-tablero" style="grid-template-columns: repeat(${columnasFinal}, minmax(0, auto));">
+                        ${cartasHTML}
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                ajustarTamanoTableroManual();
+            }, 30);
+        }
+
+        // TARJETAS MÁS GRANDES: aumentamos el tamaño mínimo y máximo
+        function ajustarTamanoTableroManual() {
+            const tablero = document.getElementById('tablero');
+            if (!tablero || !dificultadSeleccionada) return;
+            
+            const totalPares = paresPorDificultad[dificultadSeleccionada];
+            const totalCartas = totalPares * 2;
+            const computedStyles = window.getComputedStyle(tablero);
+            const columnasTexto = computedStyles.gridTemplateColumns;
+            const columnas = columnasTexto.split(' ').length;
+            
+            if (columnas === 0) return;
+            
+            const filas = Math.ceil(totalCartas / columnas);
+            const espacio = window.innerWidth >= 768 ? 18 : 12;
+            const anchoDisponible = tablero.parentElement.clientWidth - 24;
+            const altoDisponible = Math.min(window.innerHeight * 0.7, 700);
+            
+            // Tarjetas más grandes: relación más cercana a cuadrada (0.9 para que sean anchas y altas)
+            const proporcion = 0.9;
+            
+            const anchoPorColumna = (anchoDisponible - espacio * (columnas - 1)) / columnas;
+            const altoPorFila = (altoDisponible - espacio * (filas - 1)) / filas;
+            
+            // Tamaño mínimo aumentado a 95px, máximo a 190px
+            let anchoCarta = Math.max(95, Math.min(anchoPorColumna, altoPorFila / proporcion));
+            let altoCarta = anchoCarta * proporcion;
+            
+            anchoCarta = Math.min(anchoCarta, 190);
+            altoCarta = anchoCarta * proporcion;
+            
             tablero.style.gap = `${espacio}px`;
-            tablero.querySelectorAll('.card').forEach(card => {
+            tablero.style.justifyContent = 'center';
+            
+            const cartasDom = document.querySelectorAll('.card');
+            cartasDom.forEach(card => {
                 card.style.setProperty('--card-width', `${anchoCarta}px`);
                 card.style.setProperty('--card-height', `${altoCarta}px`);
             });
         }
-
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTableroTimeout);
-            resizeTableroTimeout = setTimeout(ajustarTamanoTablero, 80);
-        });
 
         function voltearCarta(index) {
             if (juegoTerminado) return;
@@ -564,7 +555,8 @@
 
             if (cartasSeleccionadas.length === 2) {
                 movimientos++;
-                document.getElementById('movimientos').textContent = movimientos;
+                const movEl = document.getElementById('movimientos');
+                if (movEl) movEl.textContent = movimientos;
                 verificarPareja();
             }
         }
@@ -573,78 +565,34 @@
             const [primera, segunda] = cartasSeleccionadas;
             const carta1 = primera.carta;
             const carta2 = segunda.carta;
-
             let esPareja = false;
             if (nivelSeleccionado === 'preescolar') {
                 esPareja = (carta1._parId === carta2._parId) && (primera.index !== segunda.index);
             } else {
-                // primaria y secundaria: mismo _parId, roles distintos (imagen ↔ texto)
                 esPareja = (carta1._parId === carta2._parId) && (carta1.rol !== carta2.rol) && (primera.index !== segunda.index);
             }
 
             if (esPareja) {
                 parejasEncontradas++;
-                document.getElementById('puntaje').textContent = `${parejasEncontradas}/${paresPorDificultad[dificultadSeleccionada]}`;
+                const puntajeSpan = document.getElementById('puntaje');
+                if (puntajeSpan) puntajeSpan.textContent = `${parejasEncontradas}/${paresPorDificultad[dificultadSeleccionada]}`;
                 const el1 = document.querySelector(`.card[data-index="${primera.index}"]`);
                 const el2 = document.querySelector(`.card[data-index="${segunda.index}"]`);
-                el1.classList.add('match-success');
-                el2.classList.add('match-success');
+                if (el1) el1.classList.add('match-success');
+                if (el2) el2.classList.add('match-success');
                 cartasSeleccionadas = [];
                 if (parejasEncontradas === paresPorDificultad[dificultadSeleccionada]) {
                     juegoGanado();
                 }
             } else {
                 setTimeout(() => {
-                    document.querySelector(`.card[data-index="${primera.index}"]`)?.classList.remove('flipped');
-                    document.querySelector(`.card[data-index="${segunda.index}"]`)?.classList.remove('flipped');
+                    const el1 = document.querySelector(`.card[data-index="${primera.index}"]`);
+                    const el2 = document.querySelector(`.card[data-index="${segunda.index}"]`);
+                    if (el1) el1.classList.remove('flipped');
+                    if (el2) el2.classList.remove('flipped');
                     cartasSeleccionadas = [];
                 }, 800);
             }
-        }
-
-        function juegoGanado() {
-            juegoTerminado = true;
-            clearInterval(timerInterval);
-            const tiempoTotal = Math.floor((Date.now() - tiempoInicio) / 1000);
-            const minutos = Math.floor(tiempoTotal / 60).toString().padStart(2, '0');
-            const segundos = (tiempoTotal % 60).toString().padStart(2, '0');
-            const puntuacion = calcularPuntuacion(movimientos, tiempoTotal);
-
-            guardarProgreso(puntuacion, tiempoTotal);
-
-            const overlay = document.createElement('div');
-            overlay.className = 'fixed inset-0 victory-overlay flex items-center justify-center z-50';
-            overlay.id = 'victoryOverlay';
-            overlay.innerHTML = `
-                <div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 text-center shadow-2xl">
-                    <div class="text-5xl mb-3">🏆</div>
-                    <h2 class="text-2xl font-bold text-white mb-1">¡Felicitaciones!</h2>
-                    <p class="text-slate-300 mb-4 text-sm">Completaste el concéntrese</p>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-slate-700 p-3 rounded-xl">
-                            <p class="text-xs text-slate-400">Movimientos</p>
-                            <p class="text-lg font-bold text-white">${movimientos}</p>
-                        </div>
-                        <div class="bg-slate-700 p-3 rounded-xl">
-                            <p class="text-xs text-slate-400">Tiempo</p>
-                            <p class="text-lg font-bold text-white">${minutos}:${segundos}</p>
-                        </div>
-                    </div>
-                    <p class="text-amber-400 font-bold text-xl mb-4">Puntuación: ${puntuacion}</p>
-                    <button id="btnJugarOtraVez" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-xl w-full mb-2 text-sm">Jugar otra vez</button>
-                    <button id="btnCambiarNivel" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 px-4 rounded-xl w-full text-sm">Cambiar nivel</button>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            document.getElementById('btnJugarOtraVez').addEventListener('click', () => {
-                overlay.remove();
-                iniciarJuego(dificultadSeleccionada);
-            });
-            document.getElementById('btnCambiarNivel').addEventListener('click', () => {
-                overlay.remove();
-                mostrarSelectorNivel();
-            });
         }
 
         function calcularPuntuacion(movs, tiempo) {
@@ -656,30 +604,120 @@
         function guardarProgreso(puntuacion, tiempo) {
             const key = `concentrese_${nivelSeleccionado}_${categoriaSeleccionada}_${dificultadSeleccionada}`;
             const datos = JSON.parse(localStorage.getItem(key) || '{}');
-            if (!datos.mejorPuntuacion || puntuacion > datos.mejorPuntuacion) {
-                datos.mejorPuntuacion = puntuacion;
-            }
-            if (!datos.mejorTiempo || tiempo < datos.mejorTiempo) {
-                datos.mejorTiempo = tiempo;
-            }
+            if (!datos.mejorPuntuacion || puntuacion > datos.mejorPuntuacion) datos.mejorPuntuacion = puntuacion;
+            if (!datos.mejorTiempo || tiempo < datos.mejorTiempo) datos.mejorTiempo = tiempo;
             datos.partidasCompletadas = (datos.partidasCompletadas || 0) + 1;
             localStorage.setItem(key, JSON.stringify(datos));
+        }
+
+        function juegoGanado() {
+            juegoTerminado = true;
+            clearInterval(timerInterval);
+            const tiempoTotal = Math.floor((Date.now() - tiempoInicio) / 1000);
+            const minutos = Math.floor(tiempoTotal / 60).toString().padStart(2, '0');
+            const segundos = (tiempoTotal % 60).toString().padStart(2, '0');
+            const puntuacion = calcularPuntuacion(movimientos, tiempoTotal);
+            guardarProgreso(puntuacion, tiempoTotal);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 victory-overlay flex items-center justify-center z-50';
+            overlay.innerHTML = `
+                <div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 text-center shadow-2xl">
+                    <div class="text-5xl mb-3">🏆</div>
+                    <h2 class="text-2xl font-bold text-white mb-1">¡Felicitaciones!</h2>
+                    <p class="text-slate-300 mb-4 text-sm">Completaste el concentrese</p>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-slate-700 p-3 rounded-xl"><p class="text-xs">Movimientos</p><p class="text-lg font-bold">${movimientos}</p></div>
+                        <div class="bg-slate-700 p-3 rounded-xl"><p class="text-xs">Tiempo</p><p class="text-lg font-bold">${minutos}:${segundos}</p></div>
+                    </div>
+                    <p class="text-amber-400 font-bold text-xl mb-4">⭐ Puntuación: ${puntuacion}</p>
+                    <button id="btnJugarOtraVez" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-xl w-full mb-2">Jugar otra vez</button>
+                    <button id="btnCambiarNivel" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 px-4 rounded-xl w-full">Cambiar nivel</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            document.getElementById('btnJugarOtraVez').onclick = () => { overlay.remove(); iniciarJuego(dificultadSeleccionada); };
+            document.getElementById('btnCambiarNivel').onclick = () => { overlay.remove(); mostrarSelectorNivel(); };
         }
 
         function iniciarCronometro() {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 if (juegoTerminado) return;
-                const ahora = Date.now();
-                const diff = Math.floor((ahora - tiempoInicio) / 1000);
-                const minutos = Math.floor(diff / 60).toString().padStart(2, '0');
-                const segundos = (diff % 60).toString().padStart(2, '0');
-                const timerEl = document.getElementById('timer');
-                if (timerEl) timerEl.textContent = `${minutos}:${segundos}`;
+                const diff = Math.floor((Date.now() - tiempoInicio) / 1000);
+                const mins = Math.floor(diff / 60).toString().padStart(2, '0');
+                const segs = (diff % 60).toString().padStart(2, '0');
+                const timerSpan = document.getElementById('timer');
+                if (timerSpan) timerSpan.textContent = `${mins}:${segs}`;
             }, 1000);
         }
 
-        // Iniciar la app
+        // ============ NAVEGACIÓN INICIAL ============
+        function mostrarSelectorNivel() {
+            appContainer.className = 'flex-1 flex items-center justify-center px-4';
+            appContainer.innerHTML = `
+                <div class="text-center animate-fadeIn w-full">
+                    <a href="../index.html" class="inline-block mb-4 text-slate-400 hover:text-white transition text-sm">← Volver al Menú</a>
+                    <h1 class="text-3xl md:text-4xl font-black text-white mb-3">🧠 Concéntrese Mundialista</h1>
+                    <p class="text-slate-300 mb-6 text-sm">Selecciona tu nivel educativo</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+                        <button onclick="seleccionarNivel('preescolar')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition">🧒 Preescolar</button>
+                        <button onclick="seleccionarNivel('primaria')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition">👦 Primaria</button>
+                        <button onclick="seleccionarNivel('secundaria')" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition">🧑 Secundaria</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function seleccionarNivel(nivel) {
+            nivelSeleccionado = nivel;
+            const categorias = (nivel === 'preescolar') ? [
+                { id: 'banderas', nombre: 'Banderas', icono: '🏳️' }, { id: 'monumentos', nombre: 'Monumentos', icono: '🏛️' },
+                { id: 'animales', nombre: 'Animales', icono: '🐾' }, { id: 'comidas', nombre: 'Comidas', icono: '🍽️' }
+            ] : (nivel === 'primaria') ? [
+                { id: 'paises', nombre: 'Países', icono: '🌍' }, { id: 'monumentos', nombre: 'Monumentos', icono: '🏰' },
+                { id: 'animales', nombre: 'Animales', icono: '🦁' }, { id: 'comidas', nombre: 'Comidas', icono: '🍕' }
+            ] : [
+                { id: 'capitales', nombre: 'Capitales', icono: '🏙️' }, { id: 'idiomas', nombre: 'Idiomas', icono: '🗣️' },
+                { id: 'monumentos', nombre: 'Monumentos ↔ País', icono: '🗽' }, { id: 'gastronomia', nombre: 'Gastronomía ↔ País', icono: '🍜' },
+                { id: 'futbol', nombre: 'Fútbol', icono: '⚽' }
+            ];
+            appContainer.innerHTML = `
+                <div class="text-center animate-fadeIn w-full">
+                    <button onclick="mostrarSelectorNivel()" class="text-slate-400 hover:text-white mb-3 inline-block text-sm">← Cambiar nivel</button>
+                    <h2 class="text-2xl font-bold text-white mb-2">Elige una categoría</h2>
+                    <p class="text-slate-400 mb-4 text-sm">Nivel: ${nivel.charAt(0).toUpperCase() + nivel.slice(1)}</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-w-xl mx-auto">
+                        ${categorias.map(cat => `<button onclick="seleccionarCategoria('${cat.id}')" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-xl transition text-sm">${cat.icono} ${cat.nombre}</button>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function seleccionarCategoria(categoriaId) {
+            categoriaSeleccionada = categoriaId;
+            appContainer.innerHTML = `
+                <div class="text-center animate-fadeIn w-full">
+                    <button onclick="seleccionarNivel('${nivelSeleccionado}')" class="text-slate-400 hover:text-white mb-3 inline-block text-sm">← Cambiar categoría</button>
+                    <h2 class="text-2xl font-bold text-white mb-2">Dificultad</h2>
+                    <p class="text-slate-400 mb-4 text-sm">Categoría: ${categoriaId}</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-lg mx-auto">
+                        <button onclick="iniciarJuego('facil')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl">Fácil (3 pares)</button>
+                        <button onclick="iniciarJuego('medio')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-xl">Medio (6 pares)</button>
+                        <button onclick="iniciarJuego('dificil')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl">Difícil (10 pares)</button>
+                        <button onclick="iniciarJuego('experto')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl">Experto (15 pares)</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTableroTimeout);
+            resizeTableroTimeout = setTimeout(() => {
+                if (document.getElementById('tablero')) ajustarTamanoTableroManual();
+            }, 100);
+        });
+        
         mostrarSelectorNivel();
     </script>
 </body>
