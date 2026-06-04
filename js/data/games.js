@@ -100,7 +100,7 @@ const GAMES_DATA = [
         id: 'ruleta-mundialista',
         name: 'Ruleta Mundialista',
         description: 'Gira la ruleta y responde preguntas sobre fútbol y cultura mundial.',
-        image: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&h=300&fit=crop',
+        image: '../images/fondos/ruleta.png',
         difficulty: 2,
         minAge: 8,
         maxPlayers: 4,
