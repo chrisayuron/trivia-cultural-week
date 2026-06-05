@@ -125,7 +125,7 @@ const GAMES_DATA = [
         objectives: ['Ortografía', 'Vocabulario', 'Deducción'],
         competencies: ['Conciencia fonológica', 'Razonamiento deductivo', 'Ampliación de vocabulario'],
         isPopular: false,
-        status: 'building',
+        status: 'available',
         gameUrl: 'games/ahorcado.html'
     },
     {

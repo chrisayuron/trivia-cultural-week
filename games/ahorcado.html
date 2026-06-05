@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ahorcado Mundialista | TRIVIA MUNDIALISTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a472a 0%, #0e2a1a 100%);
+            min-height: 100vh;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out; }
+        .animate-scaleIn { animation: scaleIn 0.3s ease-out; }
+        
+        .letter-btn {
+            transition: all 0.1s ease;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .letter-btn:active { transform: scale(0.95); }
+        .letter-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        /* Grid de letras responsive - 13 columnas en desktop, 7 en móvil */
+        .letters-grid {
+            display: grid;
+            grid-template-columns: repeat(13, 1fr);
+            gap: 6px;
+        }
+        
+        @media (max-width: 768px) {
+            .letters-grid {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 5px;
+            }
+            .letter-btn {
+                font-size: 1rem;
+                padding: 8px 0;
+            }
+        }
+        
+        @media (max-width: 550px) {
+            .letters-grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 4px;
+            }
+            .letter-btn {
+                font-size: 0.9rem;
+                padding: 6px 0;
+            }
+        }
+        
+        .word-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .letter-slot {
+            width: 55px;
+            height: 65px;
+            background: #1e293b;
+            border: 3px solid #475569;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .letter-slot.revealed {
+            background: #fbbf24;
+            color: #1e293b;
+            border-color: #eab308;
+        }
+        
+        .letter-slot.space {
+            background: transparent;
+            border: 2px dashed #fbbf24;
+            color: #fbbf24;
+        }
+        
+        @media (max-width: 768px) {
+            .letter-slot { width: 40px; height: 50px; font-size: 1.4rem; }
+            .word-container { gap: 8px; }
+        }
+        
+        @media (max-width: 550px) {
+            .letter-slot { width: 32px; height: 42px; font-size: 1.1rem; }
+            .word-container { gap: 6px; }
+        }
+        
+        @media (max-width: 450px) {
+            .letter-slot { width: 28px; height: 38px; font-size: 0.9rem; }
+            .word-container { gap: 5px; }
+        }
+        
+        .hangman-canvas {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 10px;
+            width: 100%;
+            max-width: 250px;
+            height: auto;
+        }
+        
+        .btn-main {
+            background: linear-gradient(135deg, #f5b042, #e68a2e);
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 0 #9b4b1a;
+        }
+        .btn-main:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #9b4b1a;
+        }
+        
+        .victory-overlay {
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(8px);
+        }
+        
+        /* Contenedor con overflow visible pero con ajuste de tamaño */
+        .letters-wrapper {
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .letters-wrapper::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .letters-wrapper::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        
+        .letters-wrapper::-webkit-scrollbar-thumb {
+            background: #fbbf24;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="p-3 flex items-center justify-center min-h-screen">
+    
+    <div id="app" class="container mx-auto max-w-5xl"></div>
+
+    <script>
+        // ============ PALABRAS MUNDIALISTAS ============
+        const PALABRAS_DB = [
+            { palabra: "MESSI", categoria: "⭐ JUGADORES", pista: "Jugador argentino, campeón del mundo 2022" },
+            { palabra: "MARADONA", categoria: "⭐ JUGADORES", pista: "La mano de Dios" },
+            { palabra: "PELÉ", categoria: "⭐ JUGADORES", pista: "El rey del fútbol" },
+            { palabra: "CRISTIANO RONALDO", categoria: "⭐ JUGADORES", pista: "El Bicho, portugués" },
+            { palabra: "MBAPPE", categoria: "⭐ JUGADORES", pista: "Jugador francés, veloz como un cohete" },
+            { palabra: "NEYMAR", categoria: "⭐ JUGADORES", pista: "Jugador brasileño, habilidoso" },
+            { palavra: "ZIDANE", categoria: "⭐ JUGADORES", pista: "Francés, leyenda del Real Madrid" },
+            { palabra: "BRASIL", categoria: "🏆 EQUIPOS", pista: "Pentacampeón del mundo" },
+            { palabra: "ARGENTINA", categoria: "🏆 EQUIPOS", pista: "Campeón del mundo 2022" },
+            { palabra: "ALEMANIA", categoria: "🏆 EQUIPOS", pista: "Tetracampeón, goleó 7-1 a Brasil" },
+            { palabra: "FRANCIA", categoria: "🏆 EQUIPOS", pista: "Bicampeón del mundo" },
+            { palabra: "URUGUAY", categoria: "🏆 EQUIPOS", pista: "Primer campeón del mundo" },
+            { palabra: "BALON", categoria: "⚽ TERMINOS", pista: "Objeto redondo que se patea" },
+            { palabra: "ARCO", categoria: "⚽ TERMINOS", pista: "Donde se anotan los goles" },
+            { palabra: "PENAL", categoria: "⚽ TERMINOS", pista: "Tiro desde los once metros" },
+            { palabra: "VAR", categoria: "⚽ TERMINOS", pista: "Tecnología de asistencia arbitral" },
+            { palabra: "MARACANA", categoria: "🏟️ ESTADIOS", pista: "Estadio mítico de Brasil" },
+            { palabra: "AZTECA", categoria: "🏟️ ESTADIOS", pista: "Estadio legendario de México" },
+            { palabra: "WEMBLEY", categoria: "🏟️ ESTADIOS", pista: "Estadio inglés, la catedral del fútbol" },
+            { palabra: "HIGUITA", categoria: "🇨🇴 COLOMBIA", pista: "Arquero colombiano, inventor del escorpión" },
+            { palabra: "VALDERAMA", categoria: "🇨🇴 COLOMBIA", pista: "El Pibe, ícono del fútbol colombiano" },
+            { palabra: "FALCAO", categoria: "🇨🇴 COLOMBIA", pista: "El Tigre, goleador histórico de Colombia" },
+            { palabra: "JAMES", categoria: "🇨🇴 COLOMBIA", pista: "Bota de Oro del Mundial 2014" },
+            { palabra: "COPA", categoria: "🏆 PREMIOS", pista: "Trofeo que se entrega al campeón" },
+            { palabra: "BOTA DE ORO", categoria: "🏆 PREMIOS", pista: "Premio al máximo goleador" }
+        ];
+        
+        const MAX_ATTEMPTS = 6;
+        
+        // ============ VARIABLES GLOBALES ============
+        let currentPalabra = null;
+        let currentWord = "";
+        let currentLetters = [];
+        let revealedLetters = [];
+        let attemptsLeft = MAX_ATTEMPTS;
+        let usedLetters = new Set();
+        let gameActive = true;
+        let puntos = 0;
+        
+        // ============ FUNCIONES AUXILIARES ============
+        function normalizeText(text) {
+            return text.toUpperCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Z0-9\s]/g, "");
+        }
+        
+        function showModal(title, message, onClose = null, isError = false) {
+            const modal = document.createElement("div");
+            modal.className = "fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn";
+            modal.innerHTML = `
+                <div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 text-center border-2 ${isError ? 'border-red-500' : 'border-amber-500'}">
+                    <div class="text-4xl mb-3">${title.includes("🏆") ? "🏆" : title.includes("❌") ? "❌" : "🪢"}</div>
+                    <h2 class="text-xl font-bold text-white mb-2">${title}</h2>
+                    <p class="text-slate-300 mb-4 whitespace-pre-line">${message}</p>
+                    <button class="close-modal bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2 px-6 rounded-full">Continuar</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector(".close-modal").onclick = () => {
+                modal.remove();
+                if (onClose) onClose();
+            };
+        }
+        
+        // ============ DIBUJAR AHORCADO ============
+        function drawHangman(ctx, attempts) {
+            ctx.clearRect(0, 0, 250, 250);
+            ctx.strokeStyle = "#fbbf24";
+            ctx.lineWidth = 3;
+            ctx.fillStyle = "#fbbf24";
+            
+            // Base
+            ctx.fillRect(10, 220, 100, 6);
+            // Palo vertical
+            ctx.fillRect(40, 20, 6, 200);
+            // Palo horizontal
+            ctx.fillRect(40, 20, 100, 6);
+            // Cuerda
+            ctx.fillRect(135, 20, 6, 40);
+            
+            if (attempts <= 5) {
+                ctx.beginPath();
+                ctx.arc(138, 80, 20, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            if (attempts <= 4) {
+                ctx.beginPath();
+                ctx.moveTo(138, 100);
+                ctx.lineTo(138, 155);
+                ctx.stroke();
+            }
+            if (attempts <= 3) {
+                ctx.beginPath();
+                ctx.moveTo(138, 115);
+                ctx.lineTo(110, 135);
+                ctx.stroke();
+            }
+            if (attempts <= 2) {
+                ctx.beginPath();
+                ctx.moveTo(138, 115);
+                ctx.lineTo(166, 135);
+                ctx.stroke();
+            }
+            if (attempts <= 1) {
+                ctx.beginPath();
+                ctx.moveTo(138, 155);
+                ctx.lineTo(110, 195);
+                ctx.stroke();
+            }
+            if (attempts <= 0) {
+                ctx.beginPath();
+                ctx.moveTo(138, 155);
+                ctx.lineTo(166, 195);
+                ctx.stroke();
+            }
+        }
+        
+        // ============ SELECCIONAR PALABRA ALEATORIA ============
+        function selectRandomWord() {
+            const randomIndex = Math.floor(Math.random() * PALABRAS_DB.length);
+            currentPalabra = PALABRAS_DB[randomIndex];
+            currentWord = currentPalabra.palabra.toUpperCase();
+            
+            currentLetters = currentWord.split("");
+            revealedLetters = currentLetters.map(char => (char === " " ? " " : "_"));
+            attemptsLeft = MAX_ATTEMPTS;
+            usedLetters.clear();
+            gameActive = true;
+            puntos = 0;
+            
+            document.getElementById("puntos").textContent = "0";
+            
+            document.getElementById("pistaActual").innerHTML = `<span class="text-amber-400">💡 Pista:</span> ${currentPalabra.pista}`;
+            document.getElementById("categoriaActual").innerHTML = `<span class="text-amber-400">📖 Categoría:</span> ${currentPalabra.categoria}`;
+            
+            const canvas = document.getElementById("hangmanCanvas");
+            if (canvas) {
+                const ctx = canvas.getContext("2d");
+                drawHangman(ctx, MAX_ATTEMPTS);
+            }
+            
+            updateGameUI();
+        }
+        
+        // ============ VERIFICAR LETRA ============
+        function checkLetter(letter) {
+            if (!gameActive) {
+                showModal("Juego inactivo", "La partida ha terminado. Presiona 'Nueva Palabra' para jugar de nuevo.");
+                return;
+            }
+            
+            if (usedLetters.has(letter)) {
+                showModal("Letra ya usada", `La letra "${letter}" ya fue utilizada.`);
+                return;
+            }
+            
+            usedLetters.add(letter);
+            
+            let found = false;
+            let count = 0;
+            
+            for (let i = 0; i < currentLetters.length; i++) {
+                if (currentLetters[i] === letter && revealedLetters[i] === "_") {
+                    revealedLetters[i] = letter;
+                    found = true;
+                    count++;
+                }
+            }
+            
+            if (found) {
+                const puntosGanados = 50 * count;
+                puntos += puntosGanados;
+                document.getElementById("puntos").textContent = puntos;
+                updateGameUI();
+                showModal("¡LETRA CORRECTA!", `+${puntosGanados} puntos! Encontraste ${count} vez/veces la letra "${letter}"`);
+                
+                if (!revealedLetters.includes("_")) {
+                    gameWin();
+                }
+            } else {
+                attemptsLeft--;
+                updateGameUI();
+                
+                const canvas = document.getElementById("hangmanCanvas");
+                if (canvas) {
+                    const ctx = canvas.getContext("2d");
+                    drawHangman(ctx, attemptsLeft);
+                }
+                
+                if (attemptsLeft <= 0) {
+                    gameLose();
+                } else {
+                    showModal("LETRA INCORRECTA", `La letra "${letter}" no está en la palabra. Te quedan ${attemptsLeft} intentos.`);
+                }
+            }
+        }
+        
+        function gameWin() {
+            gameActive = false;
+            showModal("🏆 ¡FELICITACIONES! 🏆", `¡Adivinaste la palabra "${currentWord}"! Ganaste ${puntos} puntos.`, () => {
+                selectRandomWord();
+            });
+        }
+        
+        function gameLose() {
+            gameActive = false;
+            const palabraRevelada = currentLetters.map(char => char === " " ? " " : char).join("");
+            showModal("💀 ¡PERDISTE! 💀", `La palabra era: "${palabraRevelada}".`, () => {
+                selectRandomWord();
+            });
+        }
+        
+        function newWord() {
+            if (confirm("¿Empezar una nueva palabra? Se perderá el progreso actual.")) {
+                selectRandomWord();
+            }
+        }
+        
+        // ============ ACTUALIZAR UI ============
+        function updateGameUI() {
+            const wordContainer = document.getElementById("wordContainer");
+            if (wordContainer) {
+                wordContainer.innerHTML = revealedLetters.map(char => 
+                    `<div class="letter-slot ${char !== '_' && char !== ' ' ? 'revealed' : ''} ${char === ' ' ? 'space' : ''}">${char === '_' ? '?' : char}</div>`
+                ).join("");
+            }
+            
+            document.getElementById("attemptsLeft").textContent = attemptsLeft;
+            
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+            const lettersContainer = document.getElementById("lettersContainer");
+            if (lettersContainer) {
+                lettersContainer.innerHTML = alphabet.map(letter => {
+                    const isUsed = usedLetters.has(letter);
+                    return `<button class="letter-btn ${isUsed ? 'disabled opacity-40 cursor-not-allowed' : 'bg-slate-700 hover:bg-slate-600'} text-white rounded-lg transition" ${isUsed ? 'disabled' : `onclick="window.checkLetterWrapper('${letter}')"`}>${letter}</button>`;
+                }).join("");
+            }
+        }
+        
+        // ============ PANTALLA PRINCIPAL DEL JUEGO ============
+        function startGame() {
+            const container = document.getElementById("app");
+            container.innerHTML = `
+                <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-4 border border-amber-500/30 animate-fadeIn">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                        <div class="bg-slate-800/50 rounded-full px-3 py-1">
+                            <span id="categoriaActual" class="text-white text-xs">📖 Cargando...</span>
+                        </div>
+                        <div class="bg-amber-500/20 rounded-full px-3 py-1">
+                            <span class="text-amber-400 text-xs">🏆 PUNTOS</span>
+                            <span id="puntos" class="text-white text-xs ml-1 font-bold">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="space-y-4">
+                            <div class="bg-slate-800/50 rounded-2xl p-4 text-center">
+                                <h3 class="text-slate-300 font-semibold mb-2 text-lg">🪢 AHORCADO</h3>
+                                <div class="flex justify-center">
+                                    <canvas id="hangmanCanvas" width="250" height="250" class="hangman-canvas"></canvas>
+                                </div>
+                                <div class="mt-3 text-slate-300">
+                                    Intentos restantes: <span id="attemptsLeft" class="text-amber-400 font-bold text-xl">6</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-slate-800/50 rounded-2xl p-4">
+                                <p id="pistaActual" class="text-white text-sm mb-3">💡 Cargando pista...</p>
+                                <div id="wordContainer" class="word-container"></div>
+                            </div>
+                            
+                            <div class="bg-slate-800/50 rounded-2xl p-4">
+                                <h3 class="text-slate-300 font-semibold mb-3 text-center text-sm">🔤 SELECCIONA UNA LETRA</h3>
+                                <div class="letters-wrapper">
+                                    <div id="lettersContainer" class="letters-grid"></div>
+                                </div>
+                                <div class="flex gap-3 mt-4">
+                                    <button id="newWordBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition text-sm">
+                                        🎲 Nueva Palabra
+                                    </button>
+                                    <button id="backToMenuBtn" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 rounded-lg transition text-sm">
+                                        🏠 Volver al menú
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const canvas = document.getElementById("hangmanCanvas");
+            if (canvas) {
+                canvas.width = 250;
+                canvas.height = 250;
+                const ctx = canvas.getContext("2d");
+                drawHangman(ctx, MAX_ATTEMPTS);
+            }
+            
+            document.getElementById("newWordBtn")?.addEventListener("click", newWord);
+            document.getElementById("backToMenuBtn")?.addEventListener("click", () => {
+                if (confirm("¿Seguro que quieres salir?")) {
+                    showMainMenu();
+                }
+            });
+            
+            selectRandomWord();
+        }
+        
+        // ============ PANTALLA PRINCIPAL ============
+        function showMainMenu() {
+            const container = document.getElementById("app");
+            container.innerHTML = `
+                <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-8 max-w-md w-full mx-auto text-center border border-amber-500/30 animate-fadeIn">
+                    <div class="text-7xl mb-3">🪢⚽</div>
+                    <h1 class="text-4xl font-black bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">AHORCADO MUNDIALISTA</h1>
+                    <p class="text-slate-300 text-sm mt-2">Cultural Week 2026</p>
+                    
+                    <div class="space-y-4 mt-8">
+                        <button id="startGame" class="btn-main text-white font-bold py-4 rounded-2xl text-xl w-full transition">🎮 COMENZAR JUEGO</button>
+                        <button id="howToPlay" class="bg-slate-700/50 hover:bg-slate-700 text-white font-bold py-3 rounded-2xl text-lg w-full transition">📖 CÓMO JUGAR</button>
+                        <button id="backToTrivia" class="bg-slate-800/50 hover:bg-slate-800 text-slate-300 font-bold py-3 rounded-2xl text-lg w-full transition">🏠 VOLVER AL MENÚ</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById("startGame")?.addEventListener("click", startGame);
+            document.getElementById("howToPlay")?.addEventListener("click", () => {
+                showModal("📖 CÓMO JUGAR", 
+                    "🪢 1. Se mostrará una palabra oculta con pista y categoría\n\n" +
+                    "🔤 2. Elige una LETRA del abecedario para adivinar\n\n" +
+                    "💰 3. Si aciertas, ganas 50 puntos por cada letra\n\n" +
+                    "💀 4. Si fallas, se dibuja una parte del ahorcado\n\n" +
+                    "💀 5. Tienes 6 intentos (cabeza, cuerpo, brazos, piernas)\n\n" +
+                    "🏆 6. ¡Adivina la palabra antes de que el ahorcado se complete!");
+            });
+            document.getElementById("backToTrivia")?.addEventListener("click", () => {
+                window.location.href = "index.html";
+            });
+        }
+        
+        window.checkLetterWrapper = (letter) => checkLetter(letter);
+        
+        showMainMenu();
+    </script>
+</body>
+</html>
