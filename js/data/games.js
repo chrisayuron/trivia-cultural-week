@@ -103,13 +103,13 @@ const GAMES_DATA = [
         image: '../images/fondos/ruleta.png',
         difficulty: 2,
         minAge: 8,
-        maxPlayers: 4,
+        maxPlayers: 2,
         estimatedTime: '15 min',
         category: 'Trivia',
         objectives: ['Conocimiento general', 'Suerte', 'Diversión grupal'],
         competencies: ['Cultura general', 'Participación', 'Manejo de turnos'],
         isPopular: true,
-        status: 'building',
+        status: 'available',
         gameUrl: 'games/ruleta.html'
     },
     {

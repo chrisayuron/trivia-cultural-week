@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ruleta Mundialista | TRIVIA MUNDIALISTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a472a 0%, #0e2a1a 100%);
+            min-height: 100vh;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out; }
+        .animate-scaleIn { animation: scaleIn 0.3s ease-out; }
+        
+        .letter-btn {
+            transition: all 0.1s ease;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+        }
+        .letter-btn:active { transform: scale(0.95); }
+        .letter-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .active-player {
+            border: 2px solid #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3);
+            background: linear-gradient(135deg, #2d3748, #1e293b);
+        }
+        
+        .wheel-pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #fbbf24;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            z-index: 10;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        
+        .letters-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 8px;
+        }
+        
+        @media (max-width: 640px) {
+            .letters-grid { grid-template-columns: repeat(7, 1fr); gap: 6px; }
+            .letter-btn { font-size: 1rem; padding: 8px 0; }
+        }
+        @media (max-width: 480px) {
+            .letters-grid { grid-template-columns: repeat(6, 1fr); }
+        }
+        
+        /* CONTENEDOR DE FRASE - FLEXIBLE Y RESPONSIVE, SIN SCROLL */
+        .frase-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            row-gap: 12px;
+            margin: 10px 0;
+            padding: 4px;
+        }
+        
+        .palabra-container {
+            display: flex;
+            gap: 4px;
+            background: rgba(30, 41, 59, 0.3);
+            padding: 4px 8px;
+            border-radius: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        /* TAMAÑOS DE CUADROS - RESPONSIVOS Y PROPORCIONALES */
+        .letra-cuadro {
+            width: 36px;
+            height: 44px;
+            background: #1e293b;
+            border: 2px solid #475569;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .letra-cuadro.revelada {
+            background: #fbbf24;
+            color: #1e293b;
+            border-color: #eab308;
+        }
+        
+        /* Responsive - tamaños progresivos */
+        @media (max-width: 900px) {
+            .letra-cuadro { width: 32px; height: 40px; font-size: 1.2rem; }
+            .palabra-container { gap: 3px; padding: 3px 6px; }
+            .frase-container { gap: 6px; }
+        }
+        
+        @media (max-width: 768px) {
+            .letra-cuadro { width: 28px; height: 36px; font-size: 1rem; }
+            .palabra-container { gap: 3px; padding: 3px 5px; }
+        }
+        
+        @media (max-width: 640px) {
+            .letra-cuadro { width: 24px; height: 32px; font-size: 0.9rem; border-radius: 6px; }
+            .palabra-container { gap: 2px; padding: 2px 4px; }
+        }
+        
+        @media (max-width: 550px) {
+            .letra-cuadro { width: 22px; height: 30px; font-size: 0.8rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .letra-cuadro { width: 20px; height: 28px; font-size: 0.75rem; }
+            .frase-container { gap: 4px; }
+        }
+        
+        @media (max-width: 420px) {
+            .letra-cuadro { width: 18px; height: 26px; font-size: 0.7rem; }
+            .palabra-container { padding: 2px 3px; }
+        }
+        
+        .message-log {
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 0.7rem;
+        }
+        .message-log p {
+            padding: 3px 6px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .vowel-modal {
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(12px);
+        }
+        .vowel-btn {
+            transition: all 0.1s ease;
+            cursor: pointer;
+        }
+        .vowel-btn:active { transform: scale(0.95); }
+        .vowel-btn.disabled-vowel {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .btn-main {
+            background: linear-gradient(135deg, #f5b042, #e68a2e);
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 0 #9b4b1a;
+        }
+        .btn-main:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #9b4b1a;
+        }
+        
+        .result-modal {
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(12px);
+        }
+        
+        /* Ajustes generales del layout */
+        .wheel-container {
+            max-width: 280px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 640px) {
+            .wheel-container {
+                max-width: 220px;
+            }
+        }
+    </style>
+</head>
+<body class="p-3">
+    
+    <div id="app" class="container mx-auto max-w-6xl"></div>
+
+    <script>
+        // ============ FRASES SELECCIONADAS ============
+        const FRASES_DB = [
+            { tema: "🏆 MUNDIAL", frase: "BRASIL ES EL UNICO PENTACAMPEON DEL MUNDO", activa: true },
+            { tema: "🏆 MUNDIAL", frase: "URUGUAY FUE EL PRIMER CAMPEON DEL MUNDO", activa: true },
+            { tema: "⭐ JUGADORES", frase: "PELE ES CONSIDERADO EL REY DEL FUTBOL", activa: true },
+            { tema: "⭐ JUGADORES", frase: "MARADONA HIZO EL GOL MAS FAMOSO DE LA HISTORIA", activa: true },
+            { tema: "⭐ JUGADORES", frase: "CRISTIANO RONALDO ES EL MAXIMO GOLEADOR DE LA HISTORIA", activa: true },
+            { tema: "🇨🇴 FUTBOL COLOMBIANO", frase: "RENE HIGUITA INVENTO EL ESCORPION", activa: true },
+            { tema: "🇨🇴 FUTBOL COLOMBIANO", frase: "JAMES RODRIGUEZ FUE BOTA DE ORO DEL MUNDIAL", activa: true },
+            { tema: "📖 ANECDOTAS", frase: "LA COPA DEL MUNDO PESA SEIS KILOS", activa: true },
+            { tema: "📖 ANECDOTAS", frase: "EL MUNDIAL SE JUEGA CADA CUATRO AÑOS", activa: true }
+        ];
+        
+        const WHEEL_SEGMENTS = [
+            { value: 100, label: "100", color: "#3b82f6", type: "points" },
+            { value: 200, label: "200", color: "#10b981", type: "points" },
+            { value: 300, label: "300", color: "#f59e0b", type: "points" },
+            { value: 400, label: "400", color: "#8b5cf6", type: "points" },
+            { value: 500, label: "500", color: "#ec4899", type: "points" },
+            { value: 600, label: "600", color: "#14b8a6", type: "points" },
+            { value: 700, label: "700", color: "#f97316", type: "points" },
+            { value: 800, label: "800", color: "#06b6d4", type: "points" },
+            { value: 900, label: "900", color: "#84cc16", type: "points" },
+            { value: 1000, label: "1000", color: "#eab308", type: "points" },
+            { value: -1, label: "PIERDE", color: "#64748b", type: "lose_turn" },
+            { value: -2, label: "QUIEBRA", color: "#1e293b", type: "bankrupt" }
+        ];
+        
+        const VOWEL_COST = 250;
+        const VOWEL_PENALTY = 75;
+        
+        // ============ VARIABLES GLOBALES ============
+        let numJugadores = 2;
+        let numPaneles = 3;
+        let jugadores = [];
+        let currentPanel = 0;
+        let currentPlayerIndex = 0;
+        let currentPhrase = null;
+        let revealedLetters = [];
+        let usedConsonants = new Set();
+        let usedVowels = new Set();
+        let currentWheelValue = 0;
+        let gameActive = true;
+        let panelPoints = [];
+        let messageLog = [];
+        let wheelSpinning = false;
+        let currentWheelAngle = 0;
+        let wheelCanvas = null;
+        let wheelCtx = null;
+        let canSelectLetter = false;
+        let fraseUsadas = [];
+        
+        // ============ FUNCIONES AUXILIARES ============
+        function normalizeText(text) {
+            return text.toUpperCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Z0-9\s]/g, "");
+        }
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            messageLog.unshift(`[${timestamp}] ${message}`);
+            if (messageLog.length > 15) messageLog.pop();
+            const logContainer = document.getElementById("messageLog");
+            if (logContainer) {
+                logContainer.innerHTML = messageLog.map(msg => `<p class="text-xs ${msg.includes('❌') ? 'text-red-400' : msg.includes('✅') ? 'text-green-400' : msg.includes('🏆') ? 'text-amber-400' : 'text-slate-300'}">${msg}</p>`).join("");
+            }
+        }
+        
+        function createConfetti() {
+            const colors = ["#fbbf24", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#ec4899"];
+            for (let i = 0; i < 150; i++) {
+                const confetti = document.createElement("div");
+                confetti.className = "confetti";
+                confetti.style.left = Math.random() * 100 + "%";
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = Math.random() * 8 + 4 + "px";
+                confetti.style.height = Math.random() * 8 + 4 + "px";
+                confetti.style.animation = `confetti ${Math.random() * 2 + 1}s ease-out forwards`;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+        
+        function showModal(title, message, onClose = null, isError = false) {
+            const modal = document.createElement("div");
+            modal.className = "fixed inset-0 result-modal flex items-center justify-center z-50 animate-fadeIn";
+            modal.innerHTML = `
+                <div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 text-center border-2 ${isError ? 'border-red-500' : 'border-amber-500'}">
+                    <div class="text-4xl mb-3">${title.includes("🏆") ? "🏆" : title.includes("❌") ? "❌" : "🎲"}</div>
+                    <h2 class="text-xl font-bold text-white mb-2">${title}</h2>
+                    <p class="text-slate-300 mb-4 whitespace-pre-line">${message}</p>
+                    <button class="close-modal bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2 px-6 rounded-full">Continuar</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector(".close-modal").onclick = () => {
+                modal.remove();
+                if (onClose) onClose();
+            };
+        }
+        
+        // ============ REINICIAR TODO EL ESTADO ============
+        function resetGameState() {
+            usedConsonants.clear();
+            usedVowels.clear();
+            currentWheelValue = 0;
+            gameActive = true;
+            wheelSpinning = false;
+            currentWheelAngle = 0;
+            canSelectLetter = false;
+            messageLog = [];
+            fraseUsadas = [];
+            selectRandomPhrase();
+            panelPoints = jugadores.map(() => 0);
+            jugadores.forEach(j => {
+                j.puntos = 0;
+                j.panelesGanados = 0;
+            });
+            currentPlayerIndex = 0;
+            currentPanel = 0;
+            
+            addLog("🎮 NUEVO JUEGO INICIADO");
+            addLog(`👥 Jugadores: ${jugadores.map(j => j.nombre).join(", ")}`);
+            addLog(`🎯 Paneles a jugar: ${numPaneles}`);
+        }
+        
+        function selectRandomPhrase() {
+            let disponibles = FRASES_DB.filter(f => f.activa && !fraseUsadas.includes(f.frase));
+            
+            if (disponibles.length === 0) {
+                fraseUsadas = [];
+                disponibles = FRASES_DB.filter(f => f.activa);
+            }
+            
+            const randomIndex = Math.floor(Math.random() * disponibles.length);
+            currentPhrase = disponibles[randomIndex];
+            
+            fraseUsadas.push(currentPhrase.frase);
+            
+            // Inicializar revealedLetters - TODAS OCULTAS
+            revealedLetters = [];
+            for (let i = 0; i < currentPhrase.frase.length; i++) {
+                const char = currentPhrase.frase[i];
+                if (char === " ") {
+                    revealedLetters.push(" ");
+                } else {
+                    revealedLetters.push("_");
+                }
+            }
+            
+            addLog(`📖 Nueva frase: "${currentPhrase.frase}"`);
+            addLog(`📁 Categoría: ${currentPhrase.tema}`);
+        }
+        
+        function onlyVowelsRemaining() {
+            const consonants = "BCDFGHJKLMNPQRSTVWXYZ";
+            for (let i = 0; i < revealedLetters.length; i++) {
+                if (revealedLetters[i] === "_") {
+                    const letraOriginal = currentPhrase.frase[i].toUpperCase();
+                    const letraNormalizada = letraOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    if (consonants.includes(letraNormalizada)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        
+        // ============ DIBUJAR RULETA ============
+        function drawWheel() {
+            if (!wheelCtx || !wheelCanvas) return;
+            const width = wheelCanvas.width;
+            const height = wheelCanvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = width / 2;
+            const angleStep = (Math.PI * 2) / WHEEL_SEGMENTS.length;
+            
+            for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
+                const startAngle = currentWheelAngle + i * angleStep;
+                const endAngle = startAngle + angleStep;
+                
+                wheelCtx.beginPath();
+                wheelCtx.moveTo(centerX, centerY);
+                wheelCtx.arc(centerX, centerY, radius, startAngle, endAngle);
+                wheelCtx.fillStyle = WHEEL_SEGMENTS[i].color;
+                wheelCtx.fill();
+                wheelCtx.strokeStyle = "white";
+                wheelCtx.lineWidth = 2;
+                wheelCtx.stroke();
+                
+                wheelCtx.save();
+                wheelCtx.translate(centerX, centerY);
+                wheelCtx.rotate(startAngle + angleStep / 2);
+                wheelCtx.textAlign = "center";
+                wheelCtx.fillStyle = "white";
+                wheelCtx.font = "bold 10px Inter";
+                wheelCtx.fillText(WHEEL_SEGMENTS[i].label, radius * 0.7, 5);
+                wheelCtx.restore();
+            }
+            
+            wheelCtx.beginPath();
+            wheelCtx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+            wheelCtx.fillStyle = "#fbbf24";
+            wheelCtx.fill();
+            wheelCtx.fillStyle = "#1e293b";
+            wheelCtx.font = "bold 16px Inter";
+            wheelCtx.fillText("🎡", centerX - 10, centerY + 6);
+        }
+        
+        function spinWheelAnimation(callback) {
+            if (wheelSpinning) return;
+            wheelSpinning = true;
+            
+            const spins = Math.floor(Math.random() * 8) + 10;
+            const startAngle = currentWheelAngle;
+            const finalAngle = startAngle + (Math.PI * 2 * spins) + (Math.random() * Math.PI * 2);
+            const startTime = performance.now();
+            const duration = 2000;
+            
+            function animate(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(1, elapsed / duration);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                currentWheelAngle = startAngle + (finalAngle - startAngle) * easeOut;
+                drawWheel();
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    wheelSpinning = false;
+                    const angleStep = (Math.PI * 2) / WHEEL_SEGMENTS.length;
+                    const pointerAngle = Math.PI * 1.5;
+                    let diff = (pointerAngle - currentWheelAngle) % (Math.PI * 2);
+                    if (diff < 0) diff += Math.PI * 2;
+                    const segmentIndex = Math.floor(diff / angleStep);
+                    const result = WHEEL_SEGMENTS[segmentIndex];
+                    callback(result);
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        
+        // ============ ACCIONES DEL JUEGO ============
+        function checkLetter(letter) {
+            if (!gameActive) {
+                showModal("Juego inactivo", "La partida ha terminado");
+                return;
+            }
+            
+            if (!canSelectLetter) {
+                showModal("Gira la ruleta", "Primero debes girar la ruleta y obtener puntos para poder elegir una letra");
+                return;
+            }
+            
+            if (currentWheelValue <= 0) {
+                showModal("Sin puntos", "No tienes puntos para esta jugada. Gira la ruleta nuevamente.");
+                canSelectLetter = false;
+                return;
+            }
+            
+            if (usedConsonants.has(letter)) {
+                showModal("Letra ya usada", `La letra "${letter}" ya fue utilizada. Pierdes el turno.`, () => nextTurn());
+                return;
+            }
+            
+            let found = false;
+            let count = 0;
+            
+            for (let i = 0; i < currentPhrase.frase.length; i++) {
+                const char = currentPhrase.frase[i];
+                if (char === " ") continue;
+                
+                const letraOriginal = char.toUpperCase();
+                const letraNormalizada = letraOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                
+                if (letraNormalizada === letter && revealedLetters[i] === "_") {
+                    revealedLetters[i] = letraOriginal;
+                    found = true;
+                    count++;
+                }
+            }
+            
+            if (found) {
+                const points = currentWheelValue * count;
+                jugadores[currentPlayerIndex].puntos += points;
+                panelPoints[currentPlayerIndex] = (panelPoints[currentPlayerIndex] || 0) + points;
+                usedConsonants.add(letter);
+                addLog(`✅ ${jugadores[currentPlayerIndex].nombre}: Encontró "${letter}" (${count} veces) +${points} pts`);
+                updateGameUI();
+                showModal("¡LETRA CORRECTA!", `+${points} puntos! Encontraste ${count} vez/veces la letra "${letter}"`);
+                
+                if (!revealedLetters.includes("_")) {
+                    completeRound();
+                } else {
+                    currentWheelValue = 0;
+                    canSelectLetter = false;
+                    updateGameUI();
+                }
+            } else {
+                usedConsonants.add(letter);
+                addLog(`❌ ${jugadores[currentPlayerIndex].nombre}: "${letter}" no está en la frase. Pierde turno.`);
+                updateGameUI();
+                showModal("LETRA INCORRECTA", `La letra "${letter}" no está en la frase. Pierdes el turno.`, () => nextTurn());
+                canSelectLetter = false;
+            }
+        }
+        
+        function showVowelModal() {
+            if (!gameActive) return;
+            
+            if (jugadores[currentPlayerIndex].puntos < VOWEL_COST) {
+                showModal("Puntos insuficientes", `Necesitas ${VOWEL_COST} puntos para comprar una vocal. Tienes ${jugadores[currentPlayerIndex].puntos}`);
+                return;
+            }
+            
+            const modal = document.createElement("div");
+            modal.className = "fixed inset-0 vowel-modal flex items-center justify-center z-50 animate-fadeIn";
+            
+            const vowels = ["A", "E", "I", "O", "U"];
+            const vowelsHTML = vowels.map(vowel => {
+                const isUsed = usedVowels.has(vowel);
+                return `<button class="vowel-btn bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl text-2xl ${isUsed ? 'disabled-vowel' : ''}" data-vowel="${vowel}" ${isUsed ? 'disabled' : ''}>${vowel}</button>`;
+            }).join("");
+            
+            modal.innerHTML = `
+                <div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 text-center border-2 border-amber-500">
+                    <div class="text-4xl mb-3">🎤</div>
+                    <h2 class="text-xl font-bold text-white mb-2">Comprar Vocal</h2>
+                    <p class="text-slate-300 mb-2">Costo fijo: <span class="text-amber-400 font-bold">${VOWEL_COST} puntos</span></p>
+                    <p class="text-slate-400 text-sm mb-4">Por cada vocal acertada se descuentan ${VOWEL_PENALTY} puntos adicionales</p>
+                    <div class="grid grid-cols-5 gap-3 mb-4">
+                        ${vowelsHTML}
+                    </div>
+                    <button id="closeVowelModal" class="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 rounded-xl">Cancelar</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            modal.querySelectorAll(".vowel-btn:not(.disabled-vowel)").forEach(btn => {
+                btn.onclick = () => {
+                    const vowel = btn.dataset.vowel;
+                    modal.remove();
+                    processBuyVowel(vowel);
+                };
+            });
+            modal.querySelector("#closeVowelModal").onclick = () => modal.remove();
+        }
+        
+        function processBuyVowel(vowel) {
+            if (usedVowels.has(vowel)) {
+                showModal("Vocal ya comprada", `La vocal "${vowel}" ya fue comprada. Pierdes el turno.`, () => nextTurn());
+                return;
+            }
+            
+            if (jugadores[currentPlayerIndex].puntos < VOWEL_COST) {
+                showModal("Puntos insuficientes", `Necesitas ${VOWEL_COST} puntos`, () => nextTurn());
+                return;
+            }
+            
+            let found = false;
+            let count = 0;
+            
+            for (let i = 0; i < currentPhrase.frase.length; i++) {
+                const char = currentPhrase.frase[i];
+                if (char === " ") continue;
+                
+                const letraOriginal = char.toUpperCase();
+                const letraNormalizada = letraOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                
+                if (letraNormalizada === vowel && revealedLetters[i] === "_") {
+                    revealedLetters[i] = letraOriginal;
+                    found = true;
+                    count++;
+                }
+            }
+            
+            jugadores[currentPlayerIndex].puntos -= VOWEL_COST;
+            
+            if (found) {
+                const penalty = VOWEL_PENALTY * count;
+                jugadores[currentPlayerIndex].puntos -= penalty;
+                usedVowels.add(vowel);
+                addLog(`🎤 ${jugadores[currentPlayerIndex].nombre}: Compró vocal "${vowel}" (${count} veces) -${VOWEL_COST + penalty} pts`);
+                showModal("¡VOCAL ACERTADA!", `La vocal "${vowel}" aparece ${count} vez/veces. Se descontaron ${VOWEL_COST + penalty} puntos.`);
+                updateGameUI();
+                
+                if (!revealedLetters.includes("_")) {
+                    completeRound();
+                }
+            } else {
+                usedVowels.add(vowel);
+                addLog(`❌ ${jugadores[currentPlayerIndex].nombre}: Compró vocal "${vowel}" pero no está en la frase. Pierde turno.`);
+                showModal("VOCAL INCORRECTA", `La vocal "${vowel}" no está en la frase. Pierdes ${VOWEL_COST} puntos y el turno.`, () => nextTurn());
+                updateGameUI();
+            }
+            
+            if (jugadores[currentPlayerIndex].puntos < 0) jugadores[currentPlayerIndex].puntos = 0;
+            updateGameUI();
+        }
+        
+        function solvePanel() {
+            if (!gameActive) return;
+            
+            const answer = prompt("✏️ ESCRIBE LA FRASE COMPLETA:", "").toUpperCase();
+            if (!answer) return;
+            
+            const normalizedAnswer = normalizeText(answer);
+            const normalizedPhrase = normalizeText(currentPhrase.frase);
+            
+            if (normalizedAnswer === normalizedPhrase) {
+                completeRound();
+            } else {
+                addLog(`❌ ${jugadores[currentPlayerIndex].nombre}: Respuesta incorrecta. Pierde turno.`);
+                showModal("RESPUESTA INCORRECTA", "La frase no es correcta. Pierdes el turno.", () => nextTurn());
+            }
+        }
+        
+        function completeRound() {
+            gameActive = false;
+            canSelectLetter = false;
+            const winner = jugadores[currentPlayerIndex];
+            winner.panelesGanados++;
+            
+            for (let i = 0; i < jugadores.length; i++) {
+                if (i !== currentPlayerIndex) {
+                    const lostPoints = panelPoints[i] || 0;
+                    jugadores[i].puntos = Math.max(0, jugadores[i].puntos - lostPoints);
+                    addLog(`⚠️ ${jugadores[i].nombre} pierde ${lostPoints} puntos del panel.`);
+                }
+            }
+            
+            createConfetti();
+            addLog(`🏆 ${winner.nombre} resolvió el panel! Gana la ronda.`);
+            showModal(`🏆 ¡${winner.nombre} RESOLVIÓ EL PANEL! 🏆`, `${winner.nombre} mantiene ${winner.puntos} puntos.`, () => {
+                if (currentPanel + 1 < numPaneles) {
+                    currentPanel++;
+                    startNewRound();
+                } else {
+                    endGame();
+                }
+            });
+        }
+        
+        function startNewRound() {
+            usedConsonants.clear();
+            usedVowels.clear();
+            currentWheelValue = 0;
+            gameActive = true;
+            canSelectLetter = false;
+            panelPoints = jugadores.map(() => 0);
+            selectRandomPhrase();
+            updateGameUI();
+            addLog(`🔄 NUEVA RONDA ${currentPanel + 1} de ${numPaneles}`);
+        }
+        
+        function endGame() {
+            const sorted = [...jugadores].sort((a, b) => b.panelesGanados - a.panelesGanados);
+            const winner = sorted[0];
+            const results = jugadores.map(j => `${j.nombre}: ${j.panelesGanados} paneles, ${j.puntos} pts`).join("\n");
+            addLog(`🏆 JUEGO TERMINADO. Campeón: ${winner.nombre}`);
+            showModal(`🏆 ¡${winner.nombre} ES EL CAMPEÓN! 🏆`, results, () => {
+                showMainMenu();
+            });
+        }
+        
+        function nextTurn() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % numJugadores;
+            currentWheelValue = 0;
+            canSelectLetter = false;
+            updateGameUI();
+            addLog(`🔄 Turno de ${jugadores[currentPlayerIndex].nombre}`);
+            showModal("Cambio de turno", `Ahora juega: ${jugadores[currentPlayerIndex].nombre}`, true);
+        }
+        
+        function handleSpin() {
+            if (!gameActive) {
+                showModal("Juego inactivo", "La partida ha terminado");
+                return;
+            }
+            if (wheelSpinning) return;
+            
+            if (onlyVowelsRemaining()) {
+                addLog(`⚠️ Solo quedan vocales. ${jugadores[currentPlayerIndex].nombre} pierde turno.`);
+                showModal("Solo quedan vocales", "No puedes girar la ruleta porque solo quedan vocales. Pierdes el turno.", () => nextTurn());
+                return;
+            }
+            
+            spinWheelAnimation((result) => {
+                addLog(`🎡 ${jugadores[currentPlayerIndex].nombre} giró: ${result.label}`);
+                
+                if (result.value === -1) {
+                    showModal("😵 ¡PIERDES EL TURNO!", "La ruleta ha decidido que pierdes el turno", () => nextTurn());
+                    canSelectLetter = false;
+                    currentWheelValue = 0;
+                    updateGameUI();
+                }
+                else if (result.value === -2) {
+                    jugadores[currentPlayerIndex].puntos = 0;
+                    panelPoints[currentPlayerIndex] = 0;
+                    updateGameUI();
+                    addLog(`💥 ${jugadores[currentPlayerIndex].nombre} ¡QUIEBRA! Pierde todos sus puntos.`);
+                    showModal("💥 ¡QUIEBRA!", "Has perdido todos tus puntos. Pierdes el turno.", () => nextTurn());
+                    canSelectLetter = false;
+                    currentWheelValue = 0;
+                    updateGameUI();
+                }
+                else if (result.value > 0) {
+                    currentWheelValue = result.value;
+                    canSelectLetter = true;
+                    updateGameUI();
+                    addLog(`💰 ${jugadores[currentPlayerIndex].nombre} juega por: ${currentWheelValue} pts por letra`);
+                    showModal("🎯 ¡GIRA COMPLETADA!", `${currentWheelValue} puntos por cada letra que encuentres. ¡Elige una consonante!`, true);
+                }
+            });
+        }
+        
+        // ============ RENDERIZAR FRASE ============
+        function renderFraseVisual() {
+            const fraseContainer = document.getElementById("fraseContainer");
+            if (!fraseContainer) return;
+            
+            const palabras = currentPhrase.frase.split(" ");
+            let posicionGlobal = 0;
+            
+            fraseContainer.innerHTML = palabras.map(palabra => {
+                const letrasHTML = palabra.split("").map((letra, idx) => {
+                    const indice = posicionGlobal + idx;
+                    const estaRevelada = revealedLetters[indice] !== "_" && revealedLetters[indice] !== " ";
+                    const letraMostrar = estaRevelada ? revealedLetters[indice] : "_";
+                    
+                    return `<div class="letra-cuadro ${estaRevelada ? 'revelada' : ''}">${letraMostrar}</div>`;
+                }).join("");
+                
+                posicionGlobal += palabra.length;
+                
+                return `<div class="palabra-container">${letrasHTML}</div>`;
+            }).join("");
+        }
+        
+        // ============ ACTUALIZAR UI ============
+        function updateGameUI() {
+            renderFraseVisual();
+            
+            const temaEl = document.getElementById("temaActual");
+            if (temaEl) temaEl.textContent = currentPhrase?.tema || "Sin tema";
+            
+            const panelEl = document.getElementById("panelActual");
+            if (panelEl) panelEl.textContent = `${currentPanel + 1} de ${numPaneles}`;
+            
+            const turnoEl = document.getElementById("turnoInfo");
+            if (turnoEl) turnoEl.innerHTML = `🎲 Turno de: <span class="text-amber-400 font-bold">${jugadores[currentPlayerIndex]?.nombre}</span>`;
+            
+            const scoresContainer = document.getElementById("playersScores");
+            if (scoresContainer && jugadores.length) {
+                scoresContainer.innerHTML = jugadores.map((j, idx) => `
+                    <div class="bg-slate-700 rounded-xl p-2 text-center ${idx === currentPlayerIndex && gameActive ? 'active-player' : ''}">
+                        <div class="text-white font-bold text-xs truncate">${j.nombre}</div>
+                        <div class="text-amber-400 text-xl font-black">${j.puntos}</div>
+                        <div class="text-slate-500 text-xs">Panel: ${panelPoints[idx] || 0}</div>
+                    </div>
+                `).join("");
+            }
+            
+            const consonants = "BCDFGHJKLMNPQRSTVWXYZ".split("");
+            const lettersContainer = document.getElementById("lettersContainer");
+            if (lettersContainer) {
+                lettersContainer.innerHTML = consonants.map(letter => {
+                    const isUsed = usedConsonants.has(letter);
+                    let disabled = isUsed;
+                    let onClick = "";
+                    
+                    if (!disabled && canSelectLetter && gameActive) {
+                        onClick = `onclick="window.checkLetterWrapper('${letter}')"`;
+                    }
+                    
+                    return `<button class="letter-btn ${disabled || !canSelectLetter ? 'disabled opacity-40 cursor-not-allowed' : 'bg-slate-700 hover:bg-slate-600'} text-white font-bold py-2 rounded-lg transition" ${disabled || !canSelectLetter ? 'disabled' : onClick}>${letter}</button>`;
+                }).join("");
+            }
+            
+            const wheelResultDiv = document.getElementById("wheelResult");
+            if (wheelResultDiv) {
+                if (currentWheelValue > 0 && canSelectLetter) {
+                    wheelResultDiv.innerHTML = `<span class="text-amber-400 font-bold text-2xl">${currentWheelValue}</span> puntos por letra - ¡Elige una consonante!`;
+                } else if (currentWheelValue > 0 && !canSelectLetter) {
+                    wheelResultDiv.innerHTML = `<span class="text-amber-400 font-bold text-2xl">${currentWheelValue}</span> puntos - Gira la ruleta nuevamente`;
+                } else {
+                    wheelResultDiv.innerHTML = `Gira la ruleta para comenzar`;
+                }
+            }
+        }
+        
+        // ============ PANTALLAS DE CONFIGURACIÓN ============
+        function showPlayersScreen() {
+            const container = document.getElementById("app");
+            container.innerHTML = `
+                <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-6 max-w-md w-full mx-auto text-center border border-amber-500/30 animate-fadeIn">
+                    <div class="text-5xl mb-3">🎡⚽</div>
+                    <h1 class="text-3xl font-black bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent mb-6">RULETA MUNDIALISTA</h1>
+                    <p class="text-slate-300 mb-4">¿Cuántos jugadores?</p>
+                    <div class="space-y-3 mb-6">
+                        <button onclick="window.selectPlayers(1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">1 Jugador</button>
+                        <button onclick="window.selectPlayers(2)" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">2 Jugadores</button>
+                        <button onclick="window.selectPlayers(3)" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">3 Jugadores</button>
+                    </div>
+                    <button id="backToMenu" class="w-full bg-slate-800/50 hover:bg-slate-800 text-slate-300 font-bold py-3 rounded-xl transition">← Volver al menú</button>
+                </div>
+            `;
+            document.getElementById("backToMenu")?.addEventListener("click", () => showMainMenu());
+        }
+        
+        window.selectPlayers = (cantidad) => {
+            numJugadores = cantidad;
+            showPanelsScreen();
+        };
+        
+        function showPanelsScreen() {
+            const container = document.getElementById("app");
+            container.innerHTML = `
+                <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-6 max-w-md w-full mx-auto text-center border border-amber-500/30 animate-fadeIn">
+                    <div class="text-5xl mb-3">🎡⚽</div>
+                    <h1 class="text-3xl font-black bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent mb-6">RULETA MUNDIALISTA</h1>
+                    <p class="text-slate-300 mb-4">¿Cuántos paneles (rondas)?</p>
+                    <div class="space-y-3 mb-6">
+                        <button onclick="window.selectPanels(3)" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">3 Paneles</button>
+                        <button onclick="window.selectPanels(5)" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">5 Paneles</button>
+                        <button onclick="window.selectPanels(9)" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">9 Paneles</button>
+                    </div>
+                    <button id="backToPlayers" class="w-full bg-slate-800/50 hover:bg-slate-800 text-slate-300 font-bold py-3 rounded-xl transition">← Volver atrás</button>
+                </div>
+            `;
+            document.getElementById("backToPlayers")?.addEventListener("click", () => showPlayersScreen());
+        }
+        
+        window.selectPanels = (paneles) => {
+            numPaneles = paneles;
+            showNamesScreen();
+        };
+        
+        function showNamesScreen() {
+            const container = document.getElementById("app");
+            let nombresHTML = `
+                <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-6 max-w-2xl w-full mx-auto border border-amber-500/30 animate-fadeIn">
+                    <div class="text-center mb-6">
+                        <div class="text-5xl mb-2">🎡⚽</div>
+                        <h1 class="text-3xl font-black bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">RULETA MUNDIALISTA</h1>
+                        <p class="text-slate-300 mt-1">Ingresa los nombres de los jugadores</p>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-2xl p-4 mb-4">
+                        <p class="text-slate-400 text-sm">👥 Jugadores: ${numJugadores} | 🎯 Paneles: ${numPaneles}</p>
+                    </div>
+                    <div class="space-y-3 mb-6">
+            `;
+            for (let i = 0; i < numJugadores; i++) {
+                nombresHTML += `
+                    <div class="bg-slate-700/50 rounded-xl p-3">
+                        <label class="text-amber-400 text-sm block mb-1">Jugador ${i + 1}:</label>
+                        <input type="text" id="nombreJugador${i}" placeholder="Jugador ${i + 1}" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
+                    </div>
+                `;
+            }
+            nombresHTML += `
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="backBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">← Volver</button>
+                        <button id="startBtn" class="flex-1 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 font-bold py-3 rounded-xl transition">🎮 Comenzar</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = nombresHTML;
+            
+            document.getElementById("backBtn")?.addEventListener("click", () => showPanelsScreen());
+            document.getElementById("startBtn")?.addEventListener("click", () => {
+                jugadores = [];
+                for (let i = 0; i < numJugadores; i++) {
+                    const input = document.getElementById(`nombreJugador${i}`);
+                    const nombre = input?.value.trim() || `Jugador ${i + 1}`;
+                    jugadores.push({ nombre, puntos: 0, panelesGanados: 0 });
+                }
+                resetGameState();
+                startGame();
+            });
+        }
+        
+        // ============ PANTALLA PRINCIPAL DEL JUEGO ============
+        function startGame() {
+            const container = document.getElementById("app");
+            container.innerHTML = `
+                <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-3 border border-amber-500/30 animate-fadeIn">
+                    <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                        <div class="bg-slate-800/50 rounded-full px-2 py-0.5">
+                            <span class="text-amber-400 text-xs">📖 Tema:</span>
+                            <span id="temaActual" class="text-white text-xs ml-1">Cargando...</span>
+                        </div>
+                        <div class="bg-amber-500/20 rounded-full px-2 py-0.5">
+                            <span class="text-amber-400 text-xs">🎯 Panel</span>
+                            <span id="panelActual" class="text-white text-xs ml-1">1 de ${numPaneles}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div class="space-y-3">
+                            <div class="bg-slate-800/50 rounded-2xl p-3 text-center">
+                                <h3 class="text-slate-300 font-semibold mb-2 text-sm">🎰 GIRAR LA RULETA</h3>
+                                <div class="wheel-container">
+                                    <div class="relative flex justify-center">
+                                        <canvas id="wheelCanvas" width="260" height="260" class="max-w-full h-auto rounded-full shadow-2xl"></canvas>
+                                        <div class="wheel-pointer"></div>
+                                        <button id="spinButton" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 font-bold py-1 px-3 rounded-full shadow-lg text-xs">
+                                            GIRAR
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="wheelResult" class="mt-2 text-slate-300 text-xs">Gira la ruleta para comenzar</div>
+                            </div>
+                            
+                            <div class="bg-slate-800/50 rounded-2xl p-2">
+                                <div id="playersScores" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="bg-slate-800/50 rounded-2xl p-3 text-center">
+                                <h3 class="text-slate-300 font-semibold mb-2 text-sm">🔍 ADIVINA LA FRASE</h3>
+                                <div id="fraseContainer" class="frase-container"></div>
+                            </div>
+                            
+                            <div class="bg-slate-800/50 rounded-2xl p-2">
+                                <h3 class="text-slate-300 font-semibold mb-2 text-center text-sm">🔤 SELECCIONA UNA CONSONANTE</h3>
+                                <div id="lettersContainer" class="letters-grid"></div>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <button id="buyVowelBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded-lg text-xs transition">
+                                        🎤 Comprar Vocal (${VOWEL_COST} pts)
+                                    </button>
+                                    <button id="solveBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 rounded-lg text-xs transition">
+                                        💡 Resolver Panel
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-slate-800/50 rounded-2xl p-2">
+                                <div id="turnoInfo" class="text-slate-300 text-xs mb-1">Turno de...</div>
+                                <div id="messageLog" class="message-log bg-slate-900/50 rounded-lg p-2 max-h-20 overflow-y-auto text-xs"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-2 text-center">
+                        <button id="exitToMenu" class="text-slate-400 text-xs hover:text-slate-300 transition">🏠 Volver al menú principal</button>
+                    </div>
+                </div>
+            `;
+            
+            wheelCanvas = document.getElementById("wheelCanvas");
+            if (wheelCanvas) {
+                wheelCanvas.width = 260;
+                wheelCanvas.height = 260;
+                wheelCtx = wheelCanvas.getContext("2d");
+                currentWheelAngle = 0;
+                drawWheel();
+            }
+            
+            document.getElementById("spinButton")?.addEventListener("click", handleSpin);
+            document.getElementById("buyVowelBtn")?.addEventListener("click", showVowelModal);
+            document.getElementById("solveBtn")?.addEventListener("click", solvePanel);
+            document.getElementById("exitToMenu")?.addEventListener("click", () => {
+                if (confirm("¿Seguro que quieres salir? Se perderá el progreso.")) {
+                    showMainMenu();
+                }
+            });
+            
+            updateGameUI();
+        }
+        
+        // ============ PANTALLA PRINCIPAL ============
+        function showMainMenu() {
+            const container = document.getElementById("app");
+            container.innerHTML = `
+                <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-8 max-w-md w-full mx-auto text-center border border-amber-500/30 animate-fadeIn">
+                    <div class="text-7xl mb-3">🎡⚽</div>
+                    <h1 class="text-4xl font-black bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">RULETA MUNDIALISTA</h1>
+                    <p class="text-slate-300 text-sm mt-2">Cultural Week 2026</p>
+                    
+                    <div class="space-y-4 mt-8">
+                        <button id="startGame" class="btn-main text-white font-bold py-4 rounded-2xl text-xl w-full transition">🎮 COMENZAR JUEGO</button>
+                        <button id="howToPlay" class="bg-slate-700/50 hover:bg-slate-700 text-white font-bold py-3 rounded-2xl text-lg w-full transition">📖 CÓMO JUGAR</button>
+                        <button id="backToTrivia" class="bg-slate-800/50 hover:bg-slate-800 text-slate-300 font-bold py-3 rounded-2xl text-lg w-full transition">🏠 VOLVER AL MENÚ</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById("startGame")?.addEventListener("click", () => showPlayersScreen());
+            document.getElementById("howToPlay")?.addEventListener("click", () => {
+                showModal("📖 CÓMO JUGAR", 
+                    "🎡 1. Gira la ruleta para obtener puntos (100 a 1000)\n\n" +
+                    "🔤 2. Elige una CONSONANTE para descubrir la frase\n\n" +
+                    "💰 3. Si aciertas, ganas: puntos × número de veces que aparece\n\n" +
+                    "🎤 4. Compra VOCALES por 250 puntos (se descuentan 75 por cada aparición)\n\n" +
+                    "💡 5. Si sabes la frase, presiona RESOLVER PANEL\n\n" +
+                    "🔄 6. Si fallas o te toca PIERDE TURNO, pasa el siguiente jugador\n\n" +
+                    "💥 7. Si cae QUIEBRA, pierdes TODOS tus puntos\n\n" +
+                    "🏆 8. Gana el jugador que más paneles resuelva");
+            });
+            document.getElementById("backToTrivia")?.addEventListener("click", () => {
+                window.location.href = "index.html";
+            });
+        }
+        
+        window.checkLetterWrapper = (letter) => checkLetter(letter);
+        
+        showMainMenu();
+    </script>
+</body>
+</html>
