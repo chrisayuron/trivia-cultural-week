@@ -141,8 +141,8 @@ const GAMES_DATA = [
         objectives: ['Conocimiento general', 'Comprensión lectora', 'Toma de decisiones'],
         competencies: ['Cultura mundial', 'Memoria', 'Razonamiento rápido'],
         isPopular: true,
-        status: 'building',
-        gameUrl: 'games/sabio-mundialista.html'
+        status: 'available',
+        gameUrl: 'games/sabio/index.html'
     }
 ];
 
